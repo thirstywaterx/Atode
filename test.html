@@ -1,0 +1,942 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="一位专业前端开发工程师的个人主页，展示关于我、作品集和联系方式。">
+    <title>你的名字 - 前端开发工程师</title>
+    <!-- 轻量级SVG Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
+    
+    <!-- 引入Google Fonts - IBM Plex Sans 用于现代字体排版 -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+    
+    <!-- 引入 Font Awesome 图标库 (CDN)，实际项目中可按需引入或自托管SVG图标以更轻量化 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+
+    <style>
+        /* CSS 变量定义 - 实现扁平化、高级感配色及主题切换 */
+        :root {
+            /* 浅色模式变量 */
+            --bg-color-light: #f0f2f5;
+            --text-color-light: #333;
+            --primary-color-light: #007bff; /* 强调蓝 */
+            --secondary-color-light: #6c757d; /* 辅助灰 */
+            --card-bg-light: #ffffff;
+            --border-color-light: #e0e0e0;
+            --link-color-light: #007bff;
+            --hover-color-light: #0056b3;
+            --btn-bg-light: #007bff;
+            --btn-text-light: #ffffff;
+            --shadow-light: rgba(0, 0, 0, 0.05); /* 轻微阴影 */
+            --error-color: #dc3545; /* 错误提示色 */
+
+            /* 默认/浅色模式设置 */
+            --bg-color: var(--bg-color-light);
+            --text-color: var(--text-color-light);
+            --primary-color: var(--primary-color-light);
+            --secondary-color: var(--secondary-color-light);
+            --card-bg: var(--card-bg-light);
+            --border-color: var(--border-color-light);
+            --link-color: var(--link-color-light);
+            --hover-color: var(--hover-color-light);
+            --btn-bg: var(--btn-bg-light);
+            --btn-text: var(--btn-text-light);
+            --shadow-strength: var(--shadow-light);
+        }
+
+        /* 深色模式变量 */
+        body.dark-mode {
+            --bg-color: #1a1a2e; /* 深蓝背景 */
+            --text-color: #e0e0e0; /* 亮灰文本 */
+            --primary-color: #8be9fd; /* 霓虹蓝强调色 */
+            --secondary-color: #6272a4; /* 辅助紫灰 */
+            --card-bg: #2a2a4a; /* 深卡片背景 */
+            --border-color: #3b3b6b; /* 深边框色 */
+            --link-color: #8be9fd;
+            --hover-color: #50fa7b; /* 霓虹绿悬停色 */
+            --btn-bg: #8be9fd;
+            --btn-text: #1a1a2e;
+            --shadow-strength: rgba(0, 0, 0, 0.3); /* 深色模式下阴影更明显 */
+        }
+
+        /* 全局样式和重置 */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth; /* 平滑滚动 */
+        }
+
+        body {
+            font-family: 'IBM Plex Sans', sans-serif;
+            line-height: 1.6;
+            color: var(--text-color);
+            background-color: var(--bg-color);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            transition: background-color 0.3s ease, color 0.3s ease; /* 主题切换平滑过渡 */
+        }
+
+        /* 链接基础样式 */
+        a {
+            color: var(--link-color);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+
+        a:hover {
+            color: var(--hover-color);
+            text-decoration: underline;
+        }
+
+        /* 标题样式 */
+        h1, h2, h3, h4, h5, h6 {
+            font-family: 'IBM Plex Sans', sans-serif;
+            margin-bottom: 0.8em;
+            color: var(--primary-color);
+        }
+
+        /* 按钮基础样式 */
+        .btn {
+            display: inline-block;
+            padding: 0.8rem 1.8rem;
+            background-color: var(--btn-bg);
+            color: var(--btn-text);
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+            box-shadow: 0 2px 4px var(--shadow-strength);
+        }
+
+        .btn:hover {
+            background-color: var(--hover-color);
+            transform: translateY(-2px); /* 轻微上浮 */
+            box-shadow: 0 4px 8px var(--shadow-strength);
+        }
+
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+        }
+
+        /* 布局容器 */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        /* Header 样式 */
+        .site-header {
+            background-color: var(--card-bg); /* 与卡片背景一致，便于深色模式切换 */
+            color: var(--text-color);
+            padding: 1rem 0;
+            box-shadow: 0 2px 5px var(--shadow-strength);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+            transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .main-nav-wrapper {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 1.5rem;
+        }
+
+        .main-nav-wrapper .logo {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            text-decoration: none;
+            transition: color 0.3s ease;
+        }
+        .main-nav-wrapper .logo:hover {
+            color: var(--hover-color);
+            text-decoration: none;
+        }
+
+        .main-nav-wrapper nav ul {
+            list-style: none;
+            display: flex;
+            gap: 2rem; /* 导航项间距 */
+        }
+
+        .main-nav-wrapper nav ul li a {
+            color: var(--text-color);
+            font-weight: 400;
+            position: relative;
+            padding-bottom: 5px;
+            transition: color 0.3s ease;
+        }
+
+        .main-nav-wrapper nav ul li a:hover {
+            color: var(--primary-color);
+        }
+
+        .main-nav-wrapper nav ul li a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: 0;
+            left: 0;
+            background-color: var(--primary-color);
+            transition: width 0.3s ease;
+        }
+
+        .main-nav-wrapper nav ul li a:hover::after,
+        .main-nav-wrapper nav ul li a.active::after { /* 添加active状态 */
+            width: 100%;
+        }
+
+        /* 移动端汉堡菜单和主题切换按钮 */
+        .nav-toggle, .theme-toggle {
+            background: none;
+            border: none;
+            font-size: 1.4em;
+            cursor: pointer;
+            color: var(--text-color);
+            padding: 5px;
+            display: none; /* 默认隐藏，在移动端显示 */
+            transition: color 0.3s ease;
+        }
+
+        .nav-toggle:hover, .theme-toggle:hover {
+            color: var(--primary-color);
+        }
+        
+        /* Main 内容区 */
+        main {
+            flex-grow: 1; /* 确保 main 占据剩余空间，使 footer 保持在底部 */
+        }
+
+        .content-section {
+            padding: 5rem 0;
+            text-align: center;
+            border-bottom: 1px solid var(--border-color);
+            transition: border-color 0.3s ease;
+        }
+
+        .content-section:last-of-type {
+            border-bottom: none;
+        }
+
+        .content-section h2 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            color: var(--primary-color);
+            position: relative;
+            padding-bottom: 0.5rem;
+        }
+        .content-section h2::after {
+            content: '';
+            position: absolute;
+            left: 50%;
+            bottom: 0;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 4px;
+            background-color: var(--primary-color);
+            border-radius: 2px;
+            transition: background-color 0.3s ease;
+        }
+
+        /* Hero Section */
+        .hero-section {
+            background: linear-gradient(135deg, var(--bg-color), var(--primary-color));
+            color: var(--btn-text); /* 按钮文本色作为背景上的文本色 */
+            padding: 8rem 0;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 70vh;
+            transition: background 0.3s ease, color 0.3s ease;
+        }
+
+        .hero-content h1 {
+            font-size: 3.5rem;
+            margin-bottom: 1rem;
+            font-weight: 600;
+            color: inherit; /* 继承父容器颜色 */
+        }
+
+        .hero-content p {
+            font-size: 1.3rem;
+            margin-bottom: 2.5rem;
+            opacity: 0.9;
+            color: inherit;
+        }
+
+        /* Fade-in on load animation for hero content */
+        .hero-content {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 1s ease-out, transform 1s ease-out;
+        }
+
+        .hero-content.show-on-load {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* About Section */
+        .about-section {
+            background-color: var(--card-bg);
+        }
+
+        .about-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr; /* 文本宽，图片窄 */
+            gap: 3rem;
+            max-width: 900px;
+            margin: 0 auto;
+            text-align: left;
+            align-items: center;
+            color: var(--text-color);
+        }
+
+        .about-text p {
+            font-size: 1.1rem;
+            margin-bottom: 1rem;
+        }
+
+        .about-image {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .about-image img {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 5px solid var(--primary-color);
+            box-shadow: 0 4px 10px var(--shadow-strength);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* Skills Section */
+        .skills-section {
+            background-color: var(--bg-color);
+        }
+
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); /* 适应更多技能卡片 */
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .skill-card {
+            background-color: var(--card-bg);
+            padding: 2rem;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px var(--shadow-strength);
+            text-align: center; /* 居中内容 */
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .skill-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .skill-card i { /* Font Awesome icon styling */
+            font-size: 3rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            transition: color 0.3s ease;
+        }
+
+        .skill-card h3 {
+            color: var(--text-color);
+            font-size: 1.2rem;
+            margin-bottom: 0;
+            transition: color 0.3s ease;
+        }
+        
+        /* Portfolio Section */
+        .portfolio-section {
+            background-color: var(--card-bg);
+        }
+
+        .portfolio-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .portfolio-item {
+            background-color: var(--bg-color);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 10px var(--shadow-strength);
+            transition: transform 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease, border-color 0.3s ease;
+            text-align: left;
+            display: flex;
+            flex-direction: column;
+            border: 1px solid var(--border-color);
+        }
+
+        .portfolio-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .portfolio-item img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            display: block;
+            border-bottom: 1px solid var(--border-color);
+            transition: border-color 0.3s ease;
+        }
+
+        .portfolio-item h3 {
+            color: var(--primary-color);
+            font-size: 1.5rem;
+            margin: 1rem 1.5rem 0.5rem;
+        }
+
+        .portfolio-item p {
+            padding: 0 1.5rem 1rem;
+            color: var(--secondary-color);
+            flex-grow: 1; /* 使描述内容撑开，按钮底部对齐 */
+        }
+
+        .portfolio-item .btn-sm {
+            margin: 0 1.5rem 1.5rem;
+            align-self: flex-start; /* 按钮靠左 */
+        }
+
+        /* Contact Section */
+        .contact-section {
+            background-color: var(--bg-color);
+        }
+
+        .contact-form {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 2rem;
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            box-shadow: 0 4px 15px var(--shadow-strength);
+            text-align: left;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: var(--text-color);
+            transition: color 0.3s ease;
+        }
+
+        .form-group input[type="text"],
+        .form-group input[type="email"],
+        .form-group textarea {
+            width: 100%;
+            padding: 0.8rem;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 1rem;
+            font-family: 'IBM Plex Sans', sans-serif;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+            background-color: var(--bg-color); /* 输入框背景 */
+            color: var(--text-color);
+        }
+
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+        }
+
+        .error-message {
+            color: var(--error-color);
+            font-size: 0.85rem;
+            margin-top: 0.25rem;
+            height: 1.2em; /* 保持高度，避免布局抖动 */
+        }
+
+        .form-success {
+            color: var(--primary-color);
+            font-weight: 600;
+            margin-top: 1rem;
+            opacity: 0;
+            height: 0;
+            overflow: hidden;
+            transition: opacity 0.5s ease, height 0.5s ease;
+        }
+
+        .form-success.active {
+            opacity: 1;
+            height: auto; /* 自动撑开 */
+        }
+
+        .contact-form .btn {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1.1rem;
+        }
+
+        /* Footer 样式 */
+        .site-footer {
+            background-color: var(--card-bg);
+            color: var(--secondary-color);
+            text-align: center;
+            padding: 2rem 0;
+            margin-top: auto; /* 确保 footer 始终在底部 */
+            border-top: 1px solid var(--border-color);
+            transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+        }
+
+        /* Scroll-triggered fade-in animation */
+        .hide-on-load {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+        }
+
+        .show-on-scroll {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .main-nav-wrapper {
+                flex-wrap: wrap; /* 允许换行 */
+                justify-content: space-between;
+            }
+            .main-nav-wrapper .logo {
+                flex-grow: 1; /* Logo占据更多空间 */
+            }
+            .main-nav-wrapper nav {
+                order: 3; /* 导航菜单在下方 */
+                width: 100%;
+                background-color: var(--card-bg);
+                box-shadow: 0 4px 8px var(--shadow-strength);
+                border-top: 1px solid var(--border-color);
+                display: none; /* 默认隐藏 */
+                transition: background-color 0.3s ease;
+            }
+            .main-nav-wrapper nav.active {
+                display: block; /* 激活时显示 */
+            }
+            .main-nav-wrapper nav ul {
+                flex-direction: column;
+                gap: 0;
+                padding: 1rem 0;
+                width: 100%;
+                align-items: center; /* 导航项居中 */
+            }
+            .main-nav-wrapper nav ul li {
+                margin: 0.75rem 0;
+            }
+            .nav-toggle, .theme-toggle {
+                display: block; /* 在移动端显示 */
+            }
+            .nav-toggle {
+                margin-left: auto; /* 推到最右边 */
+            }
+            .theme-toggle {
+                margin-right: 1rem; /* 与汉堡菜单保持距离 */
+            }
+
+
+            .hero-content h1 {
+                font-size: 2.5rem;
+            }
+            .hero-content p {
+                font-size: 1rem;
+            }
+
+            .content-section {
+                padding: 3rem 0;
+            }
+
+            .content-section h2 {
+                font-size: 2rem;
+            }
+
+            .about-grid {
+                grid-template-columns: 1fr; /* 单列布局 */
+                text-align: center;
+            }
+            .about-image {
+                order: -1; /* 图片排在文本上方 */
+                margin-bottom: 2rem;
+            }
+
+            .skills-grid, .portfolio-grid {
+                grid-template-columns: 1fr; /* 单列布局 */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .main-nav-wrapper .logo {
+                font-size: 1.5rem;
+            }
+            .hero-section {
+                padding: 6rem 0;
+            }
+            .hero-content h1 {
+                font-size: 2rem;
+            }
+            .hero-content p {
+                font-size: 0.9rem;
+            }
+            .btn {
+                padding: 0.6rem 1.2rem;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="site-header">
+        <div class="container main-nav-wrapper">
+            <a href="#hero" class="logo" aria-label="回到顶部">你的名字</a>
+            <button class="theme-toggle" aria-label="切换深色模式">
+                <i class="fas fa-moon"></i>
+            </button>
+            <button class="nav-toggle" aria-label="切换导航菜单" aria-expanded="false">
+                <i class="fas fa-bars"></i>
+            </button>
+            <nav>
+                <ul>
+                    <li><a href="#about">关于我</a></li>
+                    <li><a href="#skills">技能</a></li>
+                    <li><a href="#portfolio">作品</a></li>
+                    <li><a href="#contact">联系我</a></li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+
+    <main>
+        <section id="hero" class="hero-section">
+            <div class="hero-content">
+                <h1>你好，我是 <span>你的名字</span></h1>
+                <p>一位专注于创造优雅且高性能用户体验的前端开发工程师。</p>
+                <a href="#contact" class="btn">联系我</a>
+            </div>
+        </section>
+
+        <section id="about" class="about-section content-section hide-on-load">
+            <div class="container">
+                <h2>关于我</h2>
+                <div class="about-grid">
+                    <div class="about-text">
+                        <p>我是一名热衷于前端开发的技术人员，拥有丰富的HTML5、CSS3和JavaScript经验。我致力于将创意转化为高质量、响应式的Web应用，并通过精细的交互设计提升用户体验。</p>
+                        <p>我对新技术充满好奇，并持续学习以保持与行业前沿同步。我相信，优秀的代码不仅要实现功能，更要兼顾可维护性、性能和可访问性。</p>
+                    </div>
+                    <div class="about-image">
+                        <img src="https://via.placeholder.com/200/F0F0F0/007BFF?text=Avatar" alt="我的头像" loading="lazy">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="skills" class="skills-section content-section hide-on-load">
+            <div class="container">
+                <h2>我的技能</h2>
+                <div class="skills-grid">
+                    <div class="skill-card">
+                        <i class="fab fa-html5"></i>
+                        <h3>HTML5</h3>
+                    </div>
+                    <div class="skill-card">
+                        <i class="fab fa-css3-alt"></i>
+                        <h3>CSS3</h3>
+                    </div>
+                    <div class="skill-card">
+                        <i class="fab fa-js"></i>
+                        <h3>JavaScript</h3>
+                    </div>
+                    <div class="skill-card">
+                        <i class="fab fa-react"></i>
+                        <h3>React</h3>
+                    </div>
+                    <div class="skill-card">
+                        <i class="fab fa-vuejs"></i>
+                        <h3>Vue.js</h3>
+                    </div>
+                    <div class="skill-card">
+                        <i class="fab fa-git-alt"></i>
+                        <h3>Git</h3>
+                    </div>
+                    <div class="skill-card">
+                        <i class="fas fa-mobile-alt"></i>
+                        <h3>响应式设计</h3>
+                    </div>
+                    <div class="skill-card">
+                        <i class="fas fa-lightbulb"></i>
+                        <h3>UX/UI</h3>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="portfolio" class="portfolio-section content-section hide-on-load">
+            <div class="container">
+                <h2>我的作品</h2>
+                <div class="portfolio-grid">
+                    <article class="portfolio-item">
+                        <img src="https://via.placeholder.com/300x200/F0F0F0/007BFF?text=Project+A" alt="项目A截图" loading="lazy">
+                        <h3>项目A：响应式官网</h3>
+                        <p>一个为某科技公司设计的响应式企业官方网站，注重品牌形象展示和用户体验的优化。</p>
+                        <a href="#" class="btn-sm" target="_blank" rel="noopener noreferrer">查看详情</a>
+                    </article>
+                    <article class="portfolio-item">
+                        <img src="https://via.placeholder.com/300x200/F0F0F0/007BFF?text=Project+B" alt="项目B截图" loading="lazy">
+                        <h3>项目B：数据可视化工具</h3>
+                        <p>基于原生JavaScript实现的一个轻量级数据可视化工具，能将CSV数据渲染成交互式图表。</p>
+                        <a href="#" class="btn-sm" target="_blank" rel="noopener noreferrer">查看详情</a>
+                    </article>
+                    <article class="portfolio-item">
+                        <img src="https://via.placeholder.com/300x200/F0F0F0/007BFF?text=Project+C" alt="项目C截图" loading="lazy">
+                        <h3>项目C：��人博客主题</h3>
+                        <p>一个扁平化、注重阅读体验的个人博客主题，支持Markdown解析和代码高亮。</p>
+                        <a href="#" class="btn-sm" target="_blank" rel="noopener noreferrer">查看详情</a>
+                    </article>
+                </div>
+            </div>
+        </section>
+
+        <section id="contact" class="contact-section content-section hide-on-load">
+            <div class="container">
+                <h2>联系我</h2>
+                <form id="contactForm" class="contact-form" aria-label="联系表单">
+                    <div class="form-group">
+                        <label for="name">姓名:</label>
+                        <input type="text" id="name" name="name" required aria-required="true" placeholder="您的姓名">
+                        <div class="error-message" id="nameError" aria-live="polite"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">邮箱:</label>
+                        <input type="email" id="email" name="email" required aria-required="true" placeholder="您的邮箱地址">
+                        <div class="error-message" id="emailError" aria-live="polite"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="message">留言:</label>
+                        <textarea id="message" name="message" rows="5" required aria-required="true" placeholder="您想对我说些什么？"></textarea>
+                        <div class="error-message" id="messageError" aria-live="polite"></div>
+                    </div>
+                    <button type="submit" class="btn">发送留言</button>
+                    <div class="form-success" id="formSuccess" aria-live="polite"></div>
+                </form>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <p>&copy; <span id="current-year">2024</span> 你的名字. 保留所有权利。</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const navToggle = document.querySelector('.nav-toggle');
+            const navMenu = document.querySelector('nav ul');
+            const navWrapperNav = document.querySelector('.main-nav-wrapper nav'); // 获取nav元素本身
+            const themeToggle = document.querySelector('.theme-toggle');
+            const heroContent = document.querySelector('.hero-content');
+            const contactForm = document.getElementById('contactForm');
+
+            // 1. 移动端导航切换
+            navToggle.addEventListener('click', () => {
+                const isExpanded = navToggle.getAttribute('aria-expanded') === 'true';
+                navToggle.setAttribute('aria-expanded', !isExpanded);
+                navWrapperNav.classList.toggle('active'); // 切换 nav 元素的active类
+            });
+
+            // 隐藏移动端导航，当点击导航链接时
+            navMenu.querySelectorAll('a').forEach(link => {
+                link.addEventListener('click', () => {
+                    if (navWrapperNav.classList.contains('active')) {
+                        navWrapperNav.classList.remove('active');
+                        navToggle.setAttribute('aria-expanded', 'false');
+                    }
+                });
+            });
+
+            // 2. 主题切换功能 (深色/浅色模式)
+            const prefersDarkMode = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const storedTheme = localStorage.getItem('theme');
+
+            // 初始化主题
+            if (storedTheme === 'dark') {
+                document.body.classList.add('dark-mode');
+                themeToggle.querySelector('i').classList.replace('fa-moon', 'fa-sun');
+                themeToggle.setAttribute('aria-label', '切换到浅色模式');
+            } else if (storedTheme === null && prefersDarkMode) {
+                // 如果用户没有明确选择，但系统偏好深色模式，则默认启用深色模式
+                document.body.classList.add('dark-mode');
+                themeToggle.querySelector('i').classList.replace('fa-moon', 'fa-sun');
+                themeToggle.setAttribute('aria-label', '切换到浅色模式');
+            } else {
+                themeToggle.setAttribute('aria-label', '切换到深色模式');
+            }
+
+            themeToggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
+                const isDarkMode = document.body.classList.contains('dark-mode');
+                localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
+                themeToggle.querySelector('i').classList.replace(isDarkMode ? 'fa-moon' : 'fa-sun', isDarkMode ? 'fa-sun' : 'fa-moon');
+                themeToggle.setAttribute('aria-label', isDarkMode ? '切换到浅色模式' : '切换到深色模式');
+            });
+
+            // 3. 平滑滚动到锚点 (由CSS `scroll-behavior: smooth` 提供基础)
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        // 计算滚动位置，考虑固定头部高度
+                        const headerHeight = document.querySelector('.site-header').offsetHeight;
+                        const offsetTop = targetElement.getBoundingClientRect().top + window.pageYOffset - headerHeight;
+                        
+                        window.scrollTo({
+                            top: targetId === '#hero' ? 0 : offsetTop, // 如果是回到hero，直接滚到顶部
+                            behavior: 'smooth'
+                        });
+                        // 更新URL哈希（可选，但有助于浏览器历史和刷新）
+                        history.pushState(null, null, targetId);
+                    }
+                });
+            });
+            
+            // 4. 微��画效果：元素进入视口时淡入上滑 (`IntersectionObserver`)
+            const contentSections = document.querySelectorAll('.content-section.hide-on-load');
+            const observerOptions = {
+                root: null, // 视口作为根
+                rootMargin: '0px',
+                threshold: 0.1 // 元素10%进入视口时触发
+            };
+
+            const observer = new IntersectionObserver((entries, observer) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('show-on-scroll');
+                        observer.unobserve(entry.target); // 一旦动画触发，停止观察该元素
+                    }
+                });
+            }, observerOptions);
+
+            contentSections.forEach(section => {
+                observer.observe(section);
+            });
+
+            // 5. 微动画效果：Hero Section 初始淡入
+            if (heroContent) {
+                setTimeout(() => {
+                    heroContent.classList.add('show-on-load');
+                }, 100); // 100ms 延迟，确保CSS已加载
+            }
+
+            // 6. 客户端表单验证
+            if (contactForm) {
+                contactForm.addEventListener('submit', function(event) {
+                    event.preventDefault(); // 阻止表单默认提交行为
+
+                    let isValid = true; // 验证标志
+                    const nameInput = document.getElementById('name');
+                    const emailInput = document.getElementById('email');
+                    const messageInput = document.getElementById('message');
+
+                    const nameError = document.getElementById('nameError');
+                    const emailError = document.getElementById('emailError');
+                    const messageError = document.getElementById('messageError');
+                    const formSuccess = document.getElementById('formSuccess');
+
+                    // 重置错误和成功消息
+                    nameError.textContent = '';
+                    emailError.textContent = '';
+                    messageError.textContent = '';
+                    formSuccess.textContent = '';
+                    formSuccess.classList.remove('active');
+
+                    // 姓名验证
+                    if (nameInput.value.trim() === '') {
+                        nameError.textContent = '姓名不能为空。';
+                        nameInput.focus();
+                        isValid = false;
+                    }
+
+                    // 邮箱验证
+                    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                    if (emailInput.value.trim() === '') {
+                        emailError.textContent = '邮箱不能为空。';
+                        if (isValid) emailInput.focus(); // 聚焦第一个出错的字段
+                        isValid = false;
+                    } else if (!emailRegex.test(emailInput.value.trim())) {
+                        emailError.textContent = '请输入有效的邮箱地址。';
+                        if (isValid) emailInput.focus();
+                        isValid = false;
+                    }
+
+                    // 留言验证
+                    if (messageInput.value.trim() === '') {
+                        messageError.textContent = '留言内容不能为空。';
+                        if (isValid) messageInput.focus();
+                        isValid = false;
+                    }
+
+                    if (isValid) {
+                        // 模拟表单提交成功
+                        formSuccess.textContent = '留言已成功发送！我们很快会与您联系。';
+                        formSuccess.classList.add('active');
+                        contactForm.reset(); // 清空表单
+                        // 在实际应用中，这里会发起 AJAX 请求将数据发送到后端。
+                        console.log('表单数据:', {
+                            name: nameInput.value.trim(),
+                            email: emailInput.value.trim(),
+                            message: messageInput.value.trim()
+                        });
+                    }
+                });
+            }
+
+            // 7. 更新页脚年份
+            document.getElementById('current-year').textContent = new Date().getFullYear();
+        });
+    </script>
+</body>
+</html>
