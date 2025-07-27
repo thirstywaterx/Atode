@@ -1,5 +1,7 @@
 const fs = require('fs');
 const path = require('path');
+const AIRoute = require('./src/routes/aihandel.js');
+
 
 // MIME 类型映射
 const mimeTypes = {
@@ -14,18 +16,25 @@ const mimeTypes = {
     '.ico': 'image/x-icon'
 };
 
-const serverHandler = (req, res) => {
+const serverHandler = async (req, res) => {
     const url = req.url;
     req.path = url.split('?')[0];
-    
+
     // 处理根路径，重定向到 index.html
     if (req.path === '/') {
         req.path = '/index.html';
     }
-    
+
+    // 先检查是否是AI路由，如果是则交给aihandel.js处理
+    const AIResult = await AIRoute(req, res);
+    if (AIResult === true) {
+        // AI路由已处理完成，直接返回
+        return;
+    }
+
     // 构建文件路径（指向上级目录 d:\Cloudode）
     const filePath = path.join(__dirname, '..', req.path);
-    
+
     // 检查文件是否存在
     fs.access(filePath, fs.constants.F_OK, (err) => {
         if (err) {
@@ -35,11 +44,11 @@ const serverHandler = (req, res) => {
             res.end();
             return;
         }
-        
+
         // 获取文件扩展名
         const ext = path.extname(filePath).toLowerCase();
         const contentType = mimeTypes[ext] || 'application/octet-stream';
-        
+
         // 读取并返回文件
         fs.readFile(filePath, (err, data) => {
             if (err) {
@@ -48,7 +57,7 @@ const serverHandler = (req, res) => {
                 res.end();
                 return;
             }
-            
+
             res.writeHead(200, { "Content-Type": contentType });
             res.write(data);
             res.end();

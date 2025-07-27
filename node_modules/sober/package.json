@@ -1,0 +1,38 @@
+{
+  "name": "sober",
+  "version": "1.1.8",
+  "description": "Sober is a library of UI components designed with reference to Material You.",
+  "type": "module",
+  "scripts": {
+    "dev": "node dev/server.js",
+    "check": "npx tsc --noEmit",
+    "build": "node dev/build.js"
+  },
+  "keywords": [
+    "sober",
+    "material you",
+    "material design",
+    "web components",
+    "web",
+    "ui",
+    "ui library",
+    "vue",
+    "react",
+    "angular"
+  ],
+  "exports": {
+    ".": "./dist/main.js",
+    "./style/*": "./style/*",
+    "./*": "./dist/*.js"
+  },
+  "author": "apprat",
+  "repository": "apprat/sober",
+  "homepage": "https://soberjs.com",
+  "license": "MIT",
+  "main": "./dist/main.js",
+  "devDependencies": {
+    "esbuild": "^0.24.2",
+    "html-minifier": "^4.0.0",
+    "typescript": "^5.7.2"
+  }
+}

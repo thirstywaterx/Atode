@@ -10,3 +10,7 @@ const server = http.createServer(serverHandler);
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
+server.on('error', (err) => {
+  console.error('服务器启动失败:', err);
+});

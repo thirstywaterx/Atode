@@ -1,11 +1,149 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <title>Cloudode</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        #prompt_input {
+            position: fixed;
+            bottom: 15px;
+            left: 0;
+            width: 500px;
+            height: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: white;
+        }
+
+        .prompt_button {
+            position: absolute;
+            bottom: 3px;
+        }
+
+        .prompt_button:last-child {
+            right: 3px;
+        }
+
+        #output {
+            position: absolute;
+            top: 50px;
+            width: 90%;
+            min-height: 90%;
+            border: 1px solid black;
+            left: 50%;
+            transform: translateX(-50%);
+            overflow-y: auto;
+        }
+    </style>
 </head>
+
 <body>
-    
+
+    <div id="output">
+
+    </div>
+
+    <s-text-field id="prompt_input" label="请输入Prompt" type="multiLine" style="min-height: 96px">
+        <s-icon-button class="prompt_button" slot="end">
+            <svg viewBox="0 -960 960 960">
+                <path d="M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z">
+                </path>
+            </svg> </s-icon-button>
+    </s-text-field>
+
+    <script src="./node_modules/sober/dist/sober.min.js"></script>
+    <script>
+        const output = document.getElementById('output');
+        const promptInput = document.getElementById('prompt_input');
+        const submitButton = document.querySelector('.prompt_button');
+        
+        // 存储对话历史
+        let conversationHistory = [];
+
+        // 监听按钮点击事件
+        submitButton.addEventListener('click', async (event) => {
+            event.preventDefault();
+            await sendPrompt();
+        });
+
+        // 监听表单提交事件
+        promptInput.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            await sendPrompt();
+        });
+
+        async function sendPrompt() {
+            const prompt = promptInput.value.trim();
+            if (prompt) {
+                // 显示用户输入
+                output.innerHTML += `<p><strong>用户:</strong> ${prompt}</p>`;
+                
+                // 添加用户消息到历史记录
+                conversationHistory.push({
+                    role: 'user',
+                    content: prompt
+                });
+                
+                // 显示加载状态
+                output.innerHTML += `<p><strong>AI:</strong> 正在思考中...</p>`;
+                
+                try {
+                    // 发送请求到AI API，包含对话历史
+                    const response = await fetch('/api/ai/postprompt', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ 
+                            prompt: prompt,
+                            history: conversationHistory 
+                        })
+                    });
+                    
+                    const result = await response.json();
+                    
+                    // 移除加载状态
+                    const loadingElement = output.lastElementChild;
+                    if (loadingElement) {
+                        loadingElement.remove();
+                    }
+                    
+                    // 显示AI回复
+                    if (result.success) {
+                        output.innerHTML += `<p><strong>AI:</strong> ${result.data}</p>`;
+                        
+                        // 添加AI回复到历史记录
+                        conversationHistory.push({
+                            role: 'assistant',
+                            content: result.data
+                        });
+                    } else {
+                        output.innerHTML += `<p><strong>错误:</strong> ${result.error}</p>`;
+                    }
+                } catch (error) {
+                    // 移除加载状态
+                    const loadingElement = output.lastElementChild;
+                    if (loadingElement) {
+                        loadingElement.remove();
+                    }
+                    
+                    output.innerHTML += `<p><strong>错误:</strong> 请求失败 - ${error.message}</p>`;
+                }
+                
+                promptInput.value = '';
+                // 滚动到底部
+                output.scrollTop = output.scrollHeight;
+            }
+        }
+        </script>
 </body>
+
 </html>
