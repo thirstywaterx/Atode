@@ -55,64 +55,15 @@
         }
 
         .markdown-content pre {
-            position: relative;
             background: #f6f8fa;
             border-radius: 6px;
             padding: 16px;
             overflow-x: auto;
         }
-
-        .copy-button {
-            position: absolute;
-            top: 8px;
-            right: 8px;
-            background: #0969da;
-            color: white;
-            border: none;
-            padding: 4px 8px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 12px;
-        }
-
-        .copy-button:hover {
-            background: #0860ca;
-        }
-
-        .real-time-status {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            padding: 8px 12px;
-            border-radius: 4px;
-            font-size: 12px;
-            font-weight: bold;
-            z-index: 1000;
-        }
-
-        .status-connected {
-            background: #28a745;
-            color: white;
-        }
-
-        .status-disconnected {
-            background: #dc3545;
-            color: white;
-        }
-
-        .status-processing {
-            background: #ffc107;
-            color: #000;
-        }
     </style>
 </head>
 
 <body>
-    <!-- 实时连接状态指示器 -->
-    <div id="connection-status" class="real-time-status status-disconnected">
-        连接中...
-    </div>
-
     <div id="output"></div>
 
     <s-text-field id="prompt_input" label="请输入Prompt" type="multiLine" style="min-height: 96px">
@@ -128,7 +79,6 @@
         const output = document.getElementById('output');
         const promptInput = document.getElementById('prompt_input');
         const submitButton = document.querySelector('.prompt_button');
-        const connectionStatus = document.getElementById('connection-status');
         
         // WebSocket连接和状态管理
         let ws = null;
@@ -166,7 +116,6 @@
             ws.onopen = function(event) {
                 console.log('✅ WebSocket连接成功');
                 isConnected = true;
-                updateConnectionStatus('connected', '🔌 实时连接');
             };
 
             ws.onmessage = function(event) {
@@ -183,7 +132,6 @@
                 console.log('❌ WebSocket连接关闭', event.code, event.reason);
                 isConnected = false;
                 isProcessing = false;
-                updateConnectionStatus('disconnected', '❌ 连接断开');
                 
                 // 5秒后尝试重连
                 setTimeout(initWebSocket, 5000);
@@ -191,7 +139,6 @@
 
             ws.onerror = function(error) {
                 console.error('WebSocket错误:', error);
-                updateConnectionStatus('disconnected', '❌ 连接错误');
             };
         }
 
@@ -205,9 +152,8 @@
                     console.log('🚀 开始处理...');
                     isProcessing = true;
                     setProcessingState(true);
-                    updateConnectionStatus('processing', '🤖 AI思考中...');
                     currentMessageId = `msg-${Date.now()}`;
-                    const startDiv = `<div id="${currentMessageId}">正在处理...</div>`;
+                    const startDiv = `<div id="${currentMessageId}"><p><strong>AI：</strong>正在处理...</p></div>`;
                     output.innerHTML += startDiv;
                     console.log('✅ 已添加处理容器:', currentMessageId);
                     break;
@@ -216,20 +162,18 @@
                     console.log('🔄 协调进度:', message.message, message.progress + '%');
                     const progressContainer = document.getElementById(currentMessageId);
                     if (progressContainer) {
-                        progressContainer.innerHTML = `<p><strong>🚀 ${message.stage}/6 ${message.message}</strong></p>`;
+                        progressContainer.innerHTML = `<p><strong>AI：</strong>🚀 ${message.stage}/6 ${message.message}</p>`;
                         console.log('✅ 已更新进度显示');
                     } else {
                         console.warn('⚠️ 找不到进度容器:', currentMessageId);
                     }
-                    updateConnectionStatus('processing', `🤖 协调中 ${message.progress}%`);
                     break;
 
                 case 'stream_start':
                     console.log('🟢 开始流式传输');
-                    updateConnectionStatus('processing', '⌨️ 实时输出中...');
                     const startContainer = document.getElementById(currentMessageId);
                     if (startContainer) {
-                        startContainer.innerHTML = `<div class="markdown-content">开始接收内容...</div>`;
+                        startContainer.innerHTML = `<p><strong>AI：</strong></p><div class="markdown-content">开始接收内容...</div>`;
                         console.log('✅ 已准备内容容器');
                     } else {
                         console.warn('⚠️ 找不到开始容器:', currentMessageId);
@@ -249,7 +193,7 @@
                                 console.log('⚠️ 创建新的内容容器');
                                 contentDiv = document.createElement('div');
                                 contentDiv.className = 'markdown-content';
-                                container.innerHTML = '';
+                                container.innerHTML = '<p><strong>AI：</strong></p>';
                                 container.appendChild(contentDiv);
                             }
                             
@@ -280,7 +224,7 @@
                             if (!contentDiv) {
                                 contentDiv = document.createElement('div');
                                 contentDiv.className = 'markdown-content';
-                                container.innerHTML = '';
+                                container.innerHTML = '<p><strong>AI：</strong></p>';
                                 container.appendChild(contentDiv);
                             }
                             
@@ -303,14 +247,12 @@
                     }
                     isProcessing = false;
                     setProcessingState(false);
-                    updateConnectionStatus('connected', '🔌 实时连接');
                     break;
 
                 case 'error':
                     console.error('❌ 收到错误:', message.message);
                     isProcessing = false;
                     setProcessingState(false);
-                    updateConnectionStatus('connected', '🔌 实时连接');
                     output.innerHTML += `<p><strong>错误:</strong> ${message.message}</p>`;
                     break;
 
@@ -319,12 +261,6 @@
             }
 
             output.scrollTop = output.scrollHeight;
-        }
-
-        // 更新连接状态显示
-        function updateConnectionStatus(status, text) {
-            connectionStatus.className = `real-time-status status-${status}`;
-            connectionStatus.textContent = text;
         }
 
         // 监听按钮点击事件
@@ -398,7 +334,6 @@
             // 立即更新UI状态
             isProcessing = false;
             setProcessingState(false);
-            updateConnectionStatus('connected', '🔌 实时连接');
 
             // 立即在UI上显示任务已停止
             const container = document.getElementById(currentMessageId);
@@ -433,39 +368,12 @@
                 // 2. 使用 DOMPurify 清理HTML，防止XSS攻击
                 html = DOMPurify.sanitize(html);
                 
-                // 3. 为代码块添加复制按钮
-                html = html.replace(/<pre><code([^>]*)>([\s\S]*?)<\/code><\/pre>/g, (match, attrs, code) => {
-                    const unescapedCode = new DOMParser().parseFromString(code, 'text/html').documentElement.textContent;
-                    return `<div class="code-block-wrapper">
-                        <pre><code${attrs}>${code}</code></pre>
-                        <button class="copy-button" data-code="${encodeURIComponent(unescapedCode)}">复制</button>
-                    </div>`;
-                });
-                
                 return html;
             } catch (error) {
                 console.error('Markdown 解析错误:', error);
                 return markdown;
             }
         }
-
-        // 更新：事件委托处理复制按钮点击
-        output.addEventListener('click', function(event) {
-            if (event.target.classList.contains('copy-button')) {
-                const button = event.target;
-                const codeToCopy = decodeURIComponent(button.dataset.code);
-                
-                navigator.clipboard.writeText(codeToCopy).then(() => {
-                    const originalText = button.textContent;
-                    button.textContent = '已复制';
-                    setTimeout(() => {
-                        button.textContent = originalText;
-                    }, 2000);
-                }).catch(err => {
-                    console.error('复制失败:', err);
-                });
-            }
-        });
 
         // 心跳检测
         function startHeartbeat() {

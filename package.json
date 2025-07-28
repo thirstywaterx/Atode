@@ -16,7 +16,6 @@
     "tailwindcss": "^4.1.11"
   },
   "dependencies": {
-    "sober": "^1.1.8",
-    "ws": "^8.18.3"
+    "sober": "^1.1.8"
   }
 }
