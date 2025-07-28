@@ -311,11 +311,41 @@
                 content: prompt
             });
 
+            // 更精确的意图识别
+            const lowerPrompt = prompt.toLowerCase();
+            
+            // 首先检测文字创作需求
+            const isWritingRequest = /写.*?(小说|故事|文章|散文|诗歌|剧本|日记|传记|报告|论文|说明|介绍|分析|评论|总结)/.test(lowerPrompt) ||
+                                   /创作.*?(小说|故事|文章|散文|诗歌|剧本)/.test(lowerPrompt) ||
+                                   /^(小说|故事|文章|散文|诗歌|剧本|日记|传记|报告|论文|说明|介绍|分析|评论|总结)/.test(lowerPrompt);
+            
+            // 检测代码开发需求
+            const isCodeRequest = /写|生成|创建|制作.*?(网页|网站|页面|代码|html|css|js|程序|应用|主页|界面|布局|系统)/.test(lowerPrompt) ||
+                                 /开发|设计|实现.*?(页面|网站|网页|应用|系统)/.test(lowerPrompt);
+            
+            // 明确的否定
+            const explicitNoCode = /不要.*代码|不写.*代码|不需要.*代码|只要.*文字|只需要.*文字|纯文字说明/.test(lowerPrompt);
+
+            // 优先级：写作需求 > 明确不要代码 > 代码需求
+            let useCoordinator;
+            if (isWritingRequest || explicitNoCode) {
+                useCoordinator = true;  // 文字创作也使用协调器，但会分配给写作AI
+                console.log('📝 识别为文字创作需求，使用写作专家AI');
+            } else if (isCodeRequest) {
+                useCoordinator = true;  // 代码开发使用协调器，分配给代码AI
+                console.log('💻 识别为代码开发需求，使用代码专家AI');
+            } else {
+                useCoordinator = false; // 普通问答不使用协调器
+                console.log('💬 识别为普通问答，使用基础AI');
+            }
+            
+            console.log(`🤖 智能判断: 写作需求=${isWritingRequest}, 代码需求=${isCodeRequest}, 明确不要代码=${explicitNoCode}, 使用协调器=${useCoordinator}`);
+
             // 通过WebSocket发送请求
             const message = {
                 prompt: prompt,
                 history: conversationHistory,
-                useCoordinator: true
+                useCoordinator: useCoordinator
             };
 
             console.log('📤 发送消息到服务器:', message);

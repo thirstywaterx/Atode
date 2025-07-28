@@ -189,6 +189,16 @@ const AIData = async (req, res) => {
                         return;
                     }
                     
+                    // 只有明确包含HTML标签的内容才进行预览
+                    if (!/<\s*html|<\s*!DOCTYPE|<\s*body|<\s*head/i.test(htmlContent)) {
+                        res.setHeader('Content-Type', 'application/json');
+                        res.end(JSON.stringify({
+                            success: false,
+                            error: '内容不是有效的HTML格式'
+                        }));
+                        return;
+                    }
+                    
                     const base64Image = await htmlRenderer.convertToBase64(htmlContent);
                     
                     res.setHeader('Content-Type', 'application/json');

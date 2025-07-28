@@ -35,8 +35,30 @@ class TaskManager {
      */
     async processTaskAsync(taskId, prompt, history, useCoordinator) {
         try {
-            this.updateTaskProgress(taskId, 5, '任务创建成功，准备启动AI协调系统...');
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            this.updateTaskProgress(taskId, 5, '任务创建成功，准备分析用户需求...');
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            // 如果未明确指定是否使用协调器，进行智能判断
+            if (useCoordinator === undefined || useCoordinator === null) {
+                const lowerPrompt = prompt.toLowerCase();
+                
+                // 优先检测文字创作需求
+                const isWritingRequest = /写.*?(小说|故事|文章|散文|诗歌|剧本|日记|传记|报告|论文|说明|介绍|分析|评论|总结)/.test(lowerPrompt) ||
+                                       /创作.*?(小说|故事|文章|散文|诗歌|剧本)/.test(lowerPrompt) ||
+                                       /^(小说|故事|文章|散文|诗歌|剧本|日记|传记|报告|论文|说明|介绍|分析|评论|总结)/.test(lowerPrompt);
+                
+                // 检测代码开发需求
+                const isCodeRequest = /写|生成|创建|制作.*?(网页|网站|页面|代码|html|应用|主页)/.test(lowerPrompt) ||
+                                     /开发|设计|实现.*?(页面|网站|网页|应用)/.test(lowerPrompt);
+                
+                // 如果明确说不要代码，则不使用协调器
+                const noCodeRequest = /不要.*代码|不写.*代码|不需要.*代码|只要.*文字|只需要.*文字|纯文字/.test(lowerPrompt);
+                
+                // 文字创作和代码开发都使用协调器，但会分配给不同的专家AI
+                useCoordinator = (isWritingRequest || isCodeRequest) && !noCodeRequest;
+                
+                console.log(`📋 智能判断结果: 写作需求=${isWritingRequest}, 代码需求=${isCodeRequest}, 不要代码=${noCodeRequest}, useCoordinator=${useCoordinator}`);
+            }
             
             let result;
             if (useCoordinator) {

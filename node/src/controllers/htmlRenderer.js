@@ -47,22 +47,31 @@ class HTMLRenderer {
         }
     }
 
+    // 检查内容是否包含HTML代码
+    containsHTMLCode(content) {
+        // 更严格的HTML检测
+        return /```html/i.test(content) || 
+               /<\s*html/i.test(content) || 
+               /<\s*!DOCTYPE\s+html/i.test(content) ||
+               (/<\s*head/i.test(content) && /<\s*body/i.test(content));
+    }
+
     // 提取HTML中的代码块
     extractHTMLCode(content) {
+        // 优先提取```html代码块
         const htmlCodeRegex = /```html\s*([\s\S]*?)```/gi;
         const matches = content.match(htmlCodeRegex);
         
         if (matches && matches.length > 0) {
-            // 取第一个HTML代码块
             return matches[0].replace(/```html\s*/, '').replace(/```$/, '').trim();
         }
         
+        // 如果没有代码块，检查是否是完整的HTML文档
+        if (/<\s*html/i.test(content) || /<\s*!DOCTYPE/i.test(content)) {
+            return content;
+        }
+        
         return null;
-    }
-
-    // 检查内容是否包含HTML代码
-    containsHTMLCode(content) {
-        return /```html/i.test(content) || /<html/i.test(content);
     }
 
     // 简化的HTML质量验证
