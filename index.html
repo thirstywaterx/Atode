@@ -4,9 +4,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloudode</title>
+    <title>Cloudode - 实时AI助手</title>
     <!-- 引入 marked.js 和 highlight.js -->
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github.min.css">
     
@@ -77,17 +78,47 @@
         .copy-button:hover {
             background: #0860ca;
         }
+
+        .real-time-status {
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 1000;
+        }
+
+        .status-connected {
+            background: #28a745;
+            color: white;
+        }
+
+        .status-disconnected {
+            background: #dc3545;
+            color: white;
+        }
+
+        .status-processing {
+            background: #ffc107;
+            color: #000;
+        }
     </style>
 </head>
 
 <body>
+    <!-- 实时连接状态指示器 -->
+    <div id="connection-status" class="real-time-status status-disconnected">
+        连接中...
+    </div>
+
     <div id="output"></div>
 
     <s-text-field id="prompt_input" label="请输入Prompt" type="multiLine" style="min-height: 96px">
         <s-icon-button class="prompt_button" slot="end">
             <svg viewBox="0 -960 960 960">
-                <path d="M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z">
-                </path>
+                <path d="M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z"></path>
             </svg>
         </s-icon-button>
     </s-text-field>
@@ -97,21 +128,18 @@
         const output = document.getElementById('output');
         const promptInput = document.getElementById('prompt_input');
         const submitButton = document.querySelector('.prompt_button');
+        const connectionStatus = document.getElementById('connection-status');
         
-        // 存储对话历史和任务状态
-        let conversationHistory = [];
-        let currentTaskId = null;
+        // WebSocket连接和状态管理
+        let ws = null;
+        let isConnected = false;
         let isProcessing = false;
+        let conversationHistory = [];
+        let currentMessageId = null;
 
-        // SVG图标
-        const sendIcon = `<svg viewBox="0 -960 960 960">
-            <path d="M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z">
-            </path>
-        </svg>`;
-
-        const stopIcon = `<svg viewBox="0 -960 960 960">
-            <path d="M520-200v-560h240v560H520Zm-320 0v-560h240v560H200Zm400-80h80v-400h-80v400Zm-320 0h80v-400h-80v400Zm0-400v400-400Zm320 0v400-400Z"></path>
-        </svg>`;
+        // 修正SVG图标
+        const sendIcon = `<svg viewBox="0 -960 960 960"><path d="M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z"></path></svg>`;
+        const stopIcon = `<svg viewBox="0 -960 960 960"><path d="M520-200v-560h240v560H520Zm-320 0v-560h240v560H200Z"></path></svg>`;
 
         // 配置 marked.js
         marked.setOptions({
@@ -128,16 +156,185 @@
             gfm: true
         });
 
+        // 初始化WebSocket连接
+        function initWebSocket() {
+            const wsUrl = `ws://${window.location.host}`;
+            console.log('🔌 连接WebSocket:', wsUrl);
+            
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = function(event) {
+                console.log('✅ WebSocket连接成功');
+                isConnected = true;
+                updateConnectionStatus('connected', '🔌 实时连接');
+            };
+
+            ws.onmessage = function(event) {
+                console.log('🔔 原始WebSocket消息:', event.data);
+                try {
+                    const message = JSON.parse(event.data);
+                    handleWebSocketMessage(message);
+                } catch (error) {
+                    console.error('❌ 消息解析失败:', error, '原始数据:', event.data);
+                }
+            };
+
+            ws.onclose = function(event) {
+                console.log('❌ WebSocket连接关闭', event.code, event.reason);
+                isConnected = false;
+                isProcessing = false;
+                updateConnectionStatus('disconnected', '❌ 连接断开');
+                
+                // 5秒后尝试重连
+                setTimeout(initWebSocket, 5000);
+            };
+
+            ws.onerror = function(error) {
+                console.error('WebSocket错误:', error);
+                updateConnectionStatus('disconnected', '❌ 连接错误');
+            };
+        }
+
+        // 处理WebSocket消息
+        function handleWebSocketMessage(message) {
+            console.log('📨 收到消息类型:', message.type);
+            console.log('📊 完整消息内容:', message);
+
+            switch (message.type) {
+                case 'processing_start':
+                    console.log('🚀 开始处理...');
+                    isProcessing = true;
+                    setProcessingState(true);
+                    updateConnectionStatus('processing', '🤖 AI思考中...');
+                    currentMessageId = `msg-${Date.now()}`;
+                    const startDiv = `<div id="${currentMessageId}">正在处理...</div>`;
+                    output.innerHTML += startDiv;
+                    console.log('✅ 已添加处理容器:', currentMessageId);
+                    break;
+
+                case 'coordination_progress':
+                    console.log('🔄 协调进度:', message.message, message.progress + '%');
+                    const progressContainer = document.getElementById(currentMessageId);
+                    if (progressContainer) {
+                        progressContainer.innerHTML = `<p><strong>🚀 ${message.stage}/6 ${message.message}</strong></p>`;
+                        console.log('✅ 已更新进度显示');
+                    } else {
+                        console.warn('⚠️ 找不到进度容器:', currentMessageId);
+                    }
+                    updateConnectionStatus('processing', `🤖 协调中 ${message.progress}%`);
+                    break;
+
+                case 'stream_start':
+                    console.log('🟢 开始流式传输');
+                    updateConnectionStatus('processing', '⌨️ 实时输出中...');
+                    const startContainer = document.getElementById(currentMessageId);
+                    if (startContainer) {
+                        startContainer.innerHTML = `<div class="markdown-content">开始接收内容...</div>`;
+                        console.log('✅ 已准备内容容器');
+                    } else {
+                        console.warn('⚠️ 找不到开始容器:', currentMessageId);
+                    }
+                    break;
+
+                case 'stream_chunk':
+                    console.log('📦 收到数据块，内容长度:', message.fullContent ? message.fullContent.length : 0);
+                    console.log('📋 数据块内容预览:', message.fullContent ? message.fullContent.substring(0, 100) + '...' : '无内容');
+                    
+                    const container = document.getElementById(currentMessageId);
+                    if (container) {
+                        console.log('✅ 找到容器:', currentMessageId);
+                        if (message.fullContent) {
+                            let contentDiv = container.querySelector('.markdown-content');
+                            if (!contentDiv) {
+                                console.log('⚠️ 创建新的内容容器');
+                                contentDiv = document.createElement('div');
+                                contentDiv.className = 'markdown-content';
+                                container.innerHTML = '';
+                                container.appendChild(contentDiv);
+                            }
+                            
+                            try {
+                                contentDiv.innerHTML = parseMarkdown(message.fullContent);
+                                console.log('✅ 已更新页面内容，当前长度:', contentDiv.innerHTML.length);
+                            } catch (parseError) {
+                                console.error('❌ Markdown解析失败:', parseError);
+                                contentDiv.textContent = message.fullContent;
+                            }
+                        } else {
+                            console.warn('⚠️ 数据块没有fullContent');
+                        }
+                    } else {
+                        console.error('❌ 找不到容器:', currentMessageId, '当前所有容器:', document.querySelectorAll('[id^="msg-"]'));
+                    }
+                    break;
+
+                case 'stream_complete':
+                    console.log('✅ 流式传输完成，最终内容长度:', message.fullContent ? message.fullContent.length : 0);
+                    if (currentMessageId) {
+                        const container = document.getElementById(currentMessageId);
+                        if (container) {
+                            const finalContent = message.fullContent || message.content || '';
+                            console.log('📝 最终内容预览:', finalContent.substring(0, 200) + '...');
+                            
+                            let contentDiv = container.querySelector('.markdown-content');
+                            if (!contentDiv) {
+                                contentDiv = document.createElement('div');
+                                contentDiv.className = 'markdown-content';
+                                container.innerHTML = '';
+                                container.appendChild(contentDiv);
+                            }
+                            
+                            if (finalContent) {
+                                try {
+                                    contentDiv.innerHTML = parseMarkdown(finalContent);
+                                    conversationHistory.push({ role: 'assistant', content: finalContent });
+                                    console.log('✅ 已保存到历史记录，当前历史长度:', conversationHistory.length);
+                                } catch (parseError) {
+                                    console.error('❌ 最终内容解析失败:', parseError);
+                                    contentDiv.textContent = finalContent;
+                                }
+                            } else {
+                                console.warn('⚠️ 没有最终内容');
+                                contentDiv.innerHTML = '<p><em>未收到内容</em></p>';
+                            }
+                        } else {
+                            console.error('❌ 完成时找不到容器:', currentMessageId);
+                        }
+                    }
+                    isProcessing = false;
+                    setProcessingState(false);
+                    updateConnectionStatus('connected', '🔌 实时连接');
+                    break;
+
+                case 'error':
+                    console.error('❌ 收到错误:', message.message);
+                    isProcessing = false;
+                    setProcessingState(false);
+                    updateConnectionStatus('connected', '🔌 实时连接');
+                    output.innerHTML += `<p><strong>错误:</strong> ${message.message}</p>`;
+                    break;
+
+                default:
+                    console.log('❓ 未知消息类型:', message.type, message);
+            }
+
+            output.scrollTop = output.scrollHeight;
+        }
+
+        // 更新连接状态显示
+        function updateConnectionStatus(status, text) {
+            connectionStatus.className = `real-time-status status-${status}`;
+            connectionStatus.textContent = text;
+        }
+
         // 监听按钮点击事件
         submitButton.addEventListener('click', async (event) => {
             event.preventDefault();
             
             if (isProcessing) {
-                // 如果正在处理，则终止
                 await stopProcessing();
             } else {
-                // 如果空闲，则发送消息
-                await sendPrompt();
+                await sendPromptWebSocket();
             }
         });
 
@@ -146,90 +343,79 @@
             event.preventDefault();
             
             if (!isProcessing) {
-                await sendPrompt();
+                await sendPromptWebSocket();
             }
         });
 
-        async function sendPrompt() {
+        // 通过WebSocket发送消息
+        async function sendPromptWebSocket() {
             const prompt = promptInput.value.trim();
             
-            if (prompt) {
-                // 如果正在处理，提示用户
-                if (isProcessing) {
-                    output.innerHTML += `<p><strong>系统:</strong> 有任务正在处理中，新任务将排队等待...</p>`;
-                }
-                
-                // 切换到处理状态
-                setProcessingState(true);
-                
-                // 显示用户输入
-                output.innerHTML += `<p><strong>用户:</strong> ${prompt}</p>`;
-                
-                // 添加用户消息到历史记录
-                conversationHistory.push({
-                    role: 'user',
-                    content: prompt
-                });
-                
-                // 默认使用异步处理，始终启用多AI协调
-                await handleAsyncTask(prompt, true);
-                
-                promptInput.value = '';
-                output.scrollTop = output.scrollHeight;
+            if (!prompt) {
+                alert('请输入内容');
+                return;
             }
+
+            if (!isConnected) {
+                alert('WebSocket未连接，请等待连接恢复');
+                return;
+            }
+
+            if (isProcessing) {
+                alert('AI正在处理中，请稍候');
+                return;
+            }
+
+            // 显示用户输入
+            output.innerHTML += `<p><strong>用户:</strong> ${prompt}</p>`;
+            
+            // 添加用户消息到历史记录
+            conversationHistory.push({
+                role: 'user',
+                content: prompt
+            });
+
+            // 通过WebSocket发送请求
+            const message = {
+                prompt: prompt,
+                history: conversationHistory,
+                useCoordinator: true
+            };
+
+            console.log('📤 发送消息到服务器:', message);
+            ws.send(JSON.stringify(message));
+            
+            promptInput.value = '';
+            output.scrollTop = output.scrollHeight;
         }
 
+        // 停止处理
         async function stopProcessing() {
-            if (currentTaskId) {
-                try {
-                    // 发送终止请求
-                    const response = await fetch(`/api/ai/stop-task/${currentTaskId}`, {
-                        method: 'POST'
-                    });
-                    
-                    const result = await response.json();
-                    
-                    if (result.success) {
-                        output.innerHTML += `<p><strong>系统:</strong> 任务已终止</p>`;
-                    } else {
-                        output.innerHTML += `<p><strong>系统:</strong> 终止失败: ${result.error}</p>`;
-                    }
-                } catch (error) {
-                    console.error('终止任务失败:', error);
-                    output.innerHTML += `<p><strong>系统:</strong> 终止请求失败</p>`;
-                }
+            if (isConnected && ws) {
+                ws.send(JSON.stringify({ type: 'stop_task' }));
             }
             
-            // 无论是否成功，都重置状态
-            resetProcessingState();
+            // 立即更新UI状态
+            isProcessing = false;
+            setProcessingState(false);
+            updateConnectionStatus('connected', '🔌 实时连接');
+
+            // 立即在UI上显示任务已停止
+            const container = document.getElementById(currentMessageId);
+            if (container) {
+                container.innerHTML += '<p><strong>系统:</strong> 任务已停止。</p>';
+            }
         }
 
         function setProcessingState(processing) {
             isProcessing = processing;
-            
             if (processing) {
-                // 切换到停止图标，但不锁定界面
                 submitButton.innerHTML = stopIcon;
                 submitButton.setAttribute('aria-label', '停止处理');
-                // 移除界面锁定 - promptInput.setAttribute('disabled', 'true');
             } else {
-                // 切换到发送图标
                 submitButton.innerHTML = sendIcon;
                 submitButton.setAttribute('aria-label', '发送消息');
-                // 移除界面锁定 - promptInput.removeAttribute('disabled');
             }
-        }
-
-        function resetProcessingState() {
-            // 移除进度指示器
-            const progressElement = document.getElementById('progress-indicator');
-            if (progressElement) {
-                progressElement.remove();
-            }
-            
-            // 重置状态
-            setProcessingState(false);
-            currentTaskId = null;
         }
 
         /**
@@ -241,14 +427,18 @@
             }
 
             try {
+                // 1. 使用 marked.js 解析 Markdown
                 let html = marked.parse(markdown);
+
+                // 2. 使用 DOMPurify 清理HTML，防止XSS攻击
+                html = DOMPurify.sanitize(html);
                 
-                // 为代码块添加复制按钮
+                // 3. 为代码块添加复制按钮
                 html = html.replace(/<pre><code([^>]*)>([\s\S]*?)<\/code><\/pre>/g, (match, attrs, code) => {
-                    const codeId = 'code-' + Math.random().toString(36).substr(2, 9);
+                    const unescapedCode = new DOMParser().parseFromString(code, 'text/html').documentElement.textContent;
                     return `<div class="code-block-wrapper">
-                        <pre id="${codeId}"><code${attrs}>${code}</code></pre>
-                        <button class="copy-button" onclick="copyCode('${codeId}')">复制</button>
+                        <pre><code${attrs}>${code}</code></pre>
+                        <button class="copy-button" data-code="${encodeURIComponent(unescapedCode)}">复制</button>
                     </div>`;
                 });
                 
@@ -259,139 +449,46 @@
             }
         }
 
-        /**
-         * 复制代码功能
-         */
-        function copyCode(codeId) {
-            const codeElement = document.getElementById(codeId);
-            const code = codeElement.querySelector('code').textContent;
-            
-            navigator.clipboard.writeText(code).then(() => {
-                const button = codeElement.parentElement.querySelector('.copy-button');
-                const originalText = button.textContent;
-                button.textContent = '已复制';
-                setTimeout(() => {
-                    button.textContent = originalText;
-                }, 2000);
-            }).catch(err => {
-                console.error('复制失败:', err);
-            });
-        }
-
-        async function handleAsyncTask(prompt, useCoordinator) {
-            // 创建进度显示元素
-            const progressP = document.createElement('p');
-            progressP.innerHTML = '<strong>AI:</strong> <span id="progress-text">多AI协调系统启动中...</span> <span id="progress-bar">[0%]</span>';
-            progressP.id = 'progress-indicator';
-            output.appendChild(progressP);
-            
-            try {
-                // 创建异步任务
-                const createResponse = await fetch('/api/ai/create-task', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ 
-                        prompt: prompt,
-                        history: conversationHistory,
-                        useCoordinator: useCoordinator
-                    })
+        // 更新：事件委托处理复制按钮点击
+        output.addEventListener('click', function(event) {
+            if (event.target.classList.contains('copy-button')) {
+                const button = event.target;
+                const codeToCopy = decodeURIComponent(button.dataset.code);
+                
+                navigator.clipboard.writeText(codeToCopy).then(() => {
+                    const originalText = button.textContent;
+                    button.textContent = '已复制';
+                    setTimeout(() => {
+                        button.textContent = originalText;
+                    }, 2000);
+                }).catch(err => {
+                    console.error('复制失败:', err);
                 });
-                
-                const createResult = await createResponse.json();
-                
-                if (!createResult.success) {
-                    throw new Error(createResult.error);
-                }
-                
-                currentTaskId = createResult.taskId;
-                
-                // 轮询任务状态
-                await pollTaskStatus(currentTaskId);
-                
-            } catch (error) {
-                output.innerHTML += `<p><strong>错误:</strong> ${error.message}</p>`;
-                resetProcessingState();
             }
+        });
+
+        // 心跳检测
+        function startHeartbeat() {
+            setInterval(() => {
+                if (isConnected && ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type: 'ping' }));
+                }
+            }, 30000); // 30秒心跳
         }
 
-        async function pollTaskStatus(taskId) {
-            const maxAttempts = 600;
-            let attempts = 0;
-            
-            const poll = async () => {
-                // 检查是否已被终止
-                if (!isProcessing || currentTaskId !== taskId) {
-                    return;
-                }
+        // 页面加载时初始化WebSocket
+        window.addEventListener('load', () => {
+            initWebSocket();
+            startHeartbeat();
+        });
 
-                try {
-                    const statusResponse = await fetch(`/api/ai/task-status/${taskId}`);
-                    const statusResult = await statusResponse.json();
-                    
-                    if (!statusResult.success) {
-                        throw new Error(statusResult.error);
-                    }
-                    
-                    const task = statusResult.task;
-                    
-                    // 更新进度显示
-                    const progressText = document.getElementById('progress-text');
-                    const progressBar = document.getElementById('progress-bar');
-                    
-                    if (progressText && progressBar) {
-                        progressText.textContent = task.message || '处理中...';
-                        progressBar.textContent = `[${task.progress}%]`;
-                    }
-                    
-                    if (task.status === 'completed') {
-                        // 任务完成
-                        resetProcessingState();
-                        
-                        // 使用 marked.js 解析 Markdown 并渲染
-                        const markdownHtml = parseMarkdown(task.result.data);
-                        const aiResponseDiv = document.createElement('div');
-                        aiResponseDiv.innerHTML = `<p><strong>AI:</strong></p><div class="markdown-content">${markdownHtml}</div>`;
-                        output.appendChild(aiResponseDiv);
-                        
-                        // 添加AI回复到历史记录
-                        conversationHistory.push({
-                            role: 'assistant',
-                            content: task.result.data
-                        });
-                        
-                    } else if (task.status === 'failed') {
-                        // 任务失败
-                        resetProcessingState();
-                        output.innerHTML += `<p><strong>错误:</strong> ${task.error}</p>`;
-                        
-                    } else if (task.status === 'stopped') {
-                        // 任务被终止
-                        resetProcessingState();
-                        output.innerHTML += `<p><strong>系统:</strong> 任务已被用户终止</p>`;
-                        
-                    } else if (task.status === 'processing') {
-                        // 继续轮询
-                        attempts++;
-                        if (attempts < maxAttempts && isProcessing) {
-                            setTimeout(poll, 3000);
-                        } else {
-                            resetProcessingState();
-                            throw new Error('任务处理超时或已终止');
-                        }
-                    }
-                    
-                } catch (error) {
-                    resetProcessingState();
-                    output.innerHTML += `<p><strong>错误:</strong> 任务处理失败 - ${error.message}</p>`;
-                }
-            };
-            
-            // 开始轮询
-            setTimeout(poll, 3000);
-        }
-        </script>
+        // 页面卸载时关闭连接
+        window.addEventListener('beforeunload', () => {
+            if (ws) {
+                ws.close();
+            }
+        });
+    </script>
 </body>
 
 </html>

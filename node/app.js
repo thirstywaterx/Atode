@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
-const AIRoute = require('./src/routes/aihandel.js');
+// 移除旧的AIRoute，因为所有AI交互都将通过WebSocket进行
+// const AIRoute = require('./src/routes/aihandel.js');
 
 
 // MIME 类型映射
@@ -25,12 +26,12 @@ const serverHandler = async (req, res) => {
         req.path = '/index.html';
     }
 
-    // 先检查是否是AI路由，如果是则交给aihandel.js处理
-    const AIResult = await AIRoute(req, res);
-    if (AIResult === true) {
-        // AI路由已处理完成，直接返回
-        return;
-    }
+    // 移除对旧HTTP AI路由的调用
+    // const AIResult = await AIRoute(req, res);
+    // if (AIResult === true) {
+    //     // AI路由已处理完成，直接返回
+    //     return;
+    // }
 
     // 构建文件路径（指向上级目录 d:\Cloudode）
     const filePath = path.join(__dirname, '..', req.path);

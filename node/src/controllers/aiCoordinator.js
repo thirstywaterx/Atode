@@ -1,4 +1,4 @@
-const { getAIPrompt } = require('./aihandel.js');
+const { getAIPrompt, getAIPromptStream } = require('./aihandel.js');
 const { htmlRenderer } = require('./htmlRenderer.js');
 
 /**
@@ -75,12 +75,55 @@ class AICoordinator {
         }
     }
 
-    async executeTasksInParallel(tasks, originalPrompt, strategy) {
+    /**
+     * 新增：流式处理用户请求
+     */
+    async processUserRequestStream(prompt, history, streamCallback, stageCallback, signal) {
+        try {
+            if (signal?.aborted) throw new DOMException('请求已中止', 'AbortError');
+            stageCallback({ type: 'coordination_progress', stage: 1, progress: 10, message: '制定执行计划...' });
+            const plan = await this.aiWorkers.planner.createPlan(prompt, history, signal);
+
+            if (signal?.aborted) throw new DOMException('请求已中止', 'AbortError');
+            stageCallback({ type: 'coordination_progress', stage: 2, progress: 25, message: '制定实现思路...' });
+            const strategy = await this.aiWorkers.strategist.createStrategy(prompt, plan, history, signal);
+
+            if (signal?.aborted) throw new DOMException('请求已中止', 'AbortError');
+            stageCallback({ type: 'coordination_progress', stage: 3, progress: 50, message: '并行执行任务...' });
+            const taskResults = await this.executeTasksInParallel(plan.tasks, prompt, strategy, signal);
+
+            if (signal?.aborted) throw new DOMException('请求已中止', 'AbortError');
+            stageCallback({ type: 'coordination_progress', stage: 4, progress: 75, message: '审查所有结果...' });
+            const reviewResults = await this.aiWorkers.reviewer.reviewAllResults(taskResults, prompt, strategy, signal);
+
+            if (signal?.aborted) throw new DOMException('请求已中止', 'AbortError');
+            stageCallback({ type: 'coordination_progress', stage: 5, progress: 90, message: '整合最终结果...' });
+            const finalResult = await this.aiWorkers.integrator.integrateResultsStream(
+                taskResults,
+                reviewResults,
+                prompt,
+                plan,
+                strategy,
+                streamCallback,
+                signal
+            );
+            
+            stageCallback({ type: 'coordination_progress', stage: 6, progress: 100, message: '处理完成' });
+
+            return { success: true, data: finalResult };
+
+        } catch (error) {
+            console.error('多AI协调流式处理错误:', error);
+            return { success: false, error: '多AI协调失败: ' + error.message };
+        }
+    }
+
+    async executeTasksInParallel(tasks, originalPrompt, strategy, signal) {
         const results = {};
         const promises = [];
 
         for (const task of tasks) {
-            const promise = this.executeTask(task, originalPrompt, strategy)
+            const promise = this.executeTask(task, originalPrompt, strategy, signal)
                 .then(result => {
                     results[task.id] = result;
                     return result;
@@ -92,7 +135,7 @@ class AICoordinator {
         return results;
     }
 
-    async executeTask(task, originalPrompt, strategy) {
+    async executeTask(task, originalPrompt, strategy, signal) {
         let worker;
         switch (task.type) {
             case 'code':
@@ -105,13 +148,13 @@ class AICoordinator {
                 worker = this.aiWorkers.writer;
         }
 
-        return await worker.process(task, originalPrompt, strategy);
+        return await worker.process(task, originalPrompt, strategy, signal);
     }
 }
 
 // 计划制定AI
 class PlannerAI {
-    async createPlan(prompt, history) {
+    async createPlan(prompt, history, signal) {
         const planPrompt = `
 你是任务规划专家AI。你的职责是将用户需求转化为具体可执行的任务计划。
 
@@ -142,7 +185,7 @@ class PlannerAI {
 只返回JSON，绝对不要其他内容。
         `;
 
-        const result = await getAIPrompt(planPrompt, history);
+        const result = await getAIPrompt(planPrompt, history, signal);
         if (result.success) {
             try {
                 const parsed = JSON.parse(result.data);
@@ -183,7 +226,7 @@ class PlannerAI {
 
 // 思路规划AI
 class StrategistAI {
-    async createStrategy(prompt, plan, history) {
+    async createStrategy(prompt, plan, history, signal) {
         const strategyPrompt = `
 你是实现思路专家AI。基于执行计划，制定详细的实现思路和技术方案。
 
@@ -224,7 +267,7 @@ class StrategistAI {
 只返回JSON格式：
         `;
 
-        const result = await getAIPrompt(strategyPrompt, history);
+        const result = await getAIPrompt(strategyPrompt, history, signal);
         if (result.success) {
             try {
                 return JSON.parse(result.data);
@@ -265,7 +308,7 @@ class StrategistAI {
 
 // 代码生成专家AI
 class CodeGeneratorAI {
-    async process(task, originalPrompt, strategy) {
+    async process(task, originalPrompt, strategy, signal) {
         const codePrompt = `
 你是专业的前端开发工程师。基于详细的实现思路生成高质量代码。
 
@@ -310,7 +353,7 @@ ${strategy.implementation?.keyPoints?.map(point => `- ${point}`).join('\n') || '
 详细说明实现的关键技术点和设计思路
         `;
 
-        const result = await getAIPrompt(codePrompt);
+        const result = await getAIPrompt(codePrompt, [], signal);
         return {
             taskId: task.id,
             type: 'code',
@@ -322,7 +365,7 @@ ${strategy.implementation?.keyPoints?.map(point => `- ${point}`).join('\n') || '
 
 // 内容创作专家AI
 class WriterAI {
-    async process(task, originalPrompt, strategy) {
+    async process(task, originalPrompt, strategy, signal) {
         const writePrompt = `
 你是专业的内容创作专家。基于详细的实现思路创作高质量内容。
 
@@ -346,7 +389,7 @@ class WriterAI {
 请以Markdown格式提供内容：
         `;
 
-        const result = await getAIPrompt(writePrompt);
+        const result = await getAIPrompt(writePrompt, [], signal);
         return {
             taskId: task.id,
             type: 'writing',
@@ -358,7 +401,7 @@ class WriterAI {
 
 // 更新审查专家AI
 class ReviewerAI {
-    async reviewAllResults(taskResults, originalPrompt, strategy) {
+    async reviewAllResults(taskResults, originalPrompt, strategy, signal) {
         const allContent = Object.values(taskResults)
             .map(result => `=== 任务${result.taskId}(${result.type}) ===\n${result.content}`)
             .join('\n\n');
@@ -487,7 +530,7 @@ ${allContent}
             `;
         }
 
-        const result = await getAIPrompt(reviewPrompt);
+        const result = await getAIPrompt(reviewPrompt, [], signal);
         return this.parseReviewResult(result);
     }
 
@@ -750,6 +793,69 @@ ${allContent}
             } else {
                 return '抱歉，无法生成满足要求的内容，请重新尝试。';
             }
+        }
+
+        return result.data;
+    }
+
+    async integrateResultsStream(taskResults, reviewResults, originalPrompt, plan, strategy, streamCallback, signal) {
+        const allContent = Object.values(taskResults)
+            .map(result => `=== 任务${result.taskId}(${result.type}) ===\n${result.content}`)
+            .join('\n\n');
+
+        const integrationPrompt = `
+你是最终交付专家。基于实现思路和审查结果，整合最终的Markdown文档。
+
+用户原始需求: "${originalPrompt}"
+
+执行计划: ${JSON.stringify(plan, null, 2)}
+
+实现思路: ${JSON.stringify(strategy, null, 2)}
+
+审查结果: ${JSON.stringify(reviewResults, null, 2)}
+
+各专家AI的输出:
+${allContent}
+
+⚠️ 整合要求：
+1. 输出标准的Markdown格式
+2. 严格按照实现思路组织内容
+3. 如果审查发现问题，必须修正
+4. 确保技术实现符合架构设计
+5. 体现所有关键技术点和最佳实践
+
+最终交付物应该包括：
+- 实现概述
+- 技术架构说明
+- 完整代码实现
+- 使用说明
+- 技术特点
+
+请提供最终的Markdown格式交付物：
+        `;
+
+        const result = await getAIPromptStream(integrationPrompt, [], streamCallback, signal);
+        
+        if (!result.success) {
+            // 智能选择最佳结果作为fallback
+            const codeResults = Object.values(taskResults).filter(r => r.type === 'code' && r.success);
+            const writingResults = Object.values(taskResults).filter(r => r.type === 'writing' && r.success);
+
+            let fallbackContent = '';
+            if (codeResults.length > 0) {
+                fallbackContent = codeResults[0].content;
+            } else if (writingResults.length > 0) {
+                fallbackContent = writingResults[0].content;
+            } else {
+                fallbackContent = '抱歉，无法生成满足要求的内容，请重新尝试。';
+            }
+            
+            // 通过streamCallback发送fallback内容
+            if (streamCallback) {
+                streamCallback({ content: fallbackContent, fullContent: fallbackContent });
+            }
+            
+            return fallbackContent;
         }
 
         return result.data;
