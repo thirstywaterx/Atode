@@ -168,8 +168,6 @@
                             </svg>
                         </s-icon-button>
                     </s-text-field>
-                    <div class="link">
-                    </div>
                     <s-button id="submit" style="border-radius: 4px;box-shadow: none;" onclick="login()">
                         <s-circular-progress indeterminate="true" slot="start" id="progress"
                             style="display: none;"></s-circular-progress> 登录
@@ -289,6 +287,7 @@
             async function login() {
                 const usernameField = document.querySelector('s-text-field[label="请输入用户名"]');
                 const passwordField = document.querySelector('s-text-field[label="请输入密码"]');
+                
                 const username = usernameField.value;
                 const password = passwordField.value;
                 
@@ -623,6 +622,12 @@
 
                 if (!prompt) {
                     alert('请输入内容');
+                    return;
+                }
+
+                if (!currentUser) {
+                    alert('请先登录后再使用AI功能。');
+                    dialog.showed = true; // 显示登录对话框
                     return;
                 }
 

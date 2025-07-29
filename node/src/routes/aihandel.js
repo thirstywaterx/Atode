@@ -2,6 +2,7 @@ const { getAIPrompt } = require('../controllers/aihandel.js');
 const { AICoordinator } = require('../controllers/aiCoordinator.js');
 const { taskManager } = require('../controllers/taskManager.js');
 const { htmlRenderer } = require('../controllers/htmlRenderer.js');
+const sessionManager = require('../controllers/sessionManager.js');
 
 let coordinator;
 try {
@@ -14,6 +15,19 @@ try {
 const AIData = async (req, res) => {
     const method = req.method;
     const path = req.path;
+
+    // 验证用户会话
+    if (path.startsWith('/api/ai/')) {
+        const cookies = req.headers.cookie || '';
+        const sessionId = cookies.split(';').find(c => c.trim().startsWith('sessionId='))?.split('=')[1];
+        const session = sessionId ? sessionManager.getSession(sessionId) : null;
+
+        if (!session) {
+            res.writeHead(401, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ success: false, error: '请先登录后再使用AI功能' }));
+            return true; // 阻止后续处理
+        }
+    }
 
     console.log('AI Route:', method, path); // 添加调试日志
 
