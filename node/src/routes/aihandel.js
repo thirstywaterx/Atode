@@ -3,6 +3,7 @@ const { AICoordinator } = require('../controllers/aiCoordinator.js');
 const { taskManager } = require('../controllers/taskManager.js');
 const { htmlRenderer } = require('../controllers/htmlRenderer.js');
 const sessionManager = require('../controllers/sessionManager.js');
+const chatHistoryController = require('../controllers/chatHistoryController.js');
 
 let coordinator;
 try {
@@ -30,6 +31,101 @@ const AIData = async (req, res) => {
     }
 
     console.log('AI Route:', method, path); // 添加调试日志
+
+    // 保存聊天历史记录
+    if (method === 'POST' && path === '/api/ai/save-history') {
+        try {
+            const cookies = req.headers.cookie || '';
+            const sessionId = cookies.split(';').find(c => c.trim().startsWith('sessionId='))?.split('=')[1];
+            const session = sessionId ? sessionManager.getSession(sessionId) : null;
+            
+            if (!session) {
+                res.writeHead(401, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: '请先登录后再使用此功能' }));
+                return true;
+            }
+            
+            let body = '';
+            req.on('data', chunk => {
+                body += chunk.toString();
+            });
+            
+            req.on('end', async () => {
+                try {
+                    const { title, content } = JSON.parse(body);
+                    
+                    if (!title || !content) {
+                        res.writeHead(400, { 'Content-Type': 'application/json' });
+                        res.end(JSON.stringify({ success: false, error: '标题和内容不能为空' }));
+                        return;
+                    }
+                    
+                    const result = await chatHistoryController.saveHistory(session.userId, title, content);
+                    
+                    res.writeHead(result.success ? 200 : 500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(result));
+                } catch (error) {
+                    console.error('保存聊天历史处理错误:', error);
+                    res.writeHead(500, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ success: false, error: '处理请求失败: ' + error.message }));
+                }
+            });
+            
+            return true;
+        } catch (error) {
+            console.error('保存聊天历史路由错误:', error);
+            return false;
+        }
+    }
+
+    // 获取聊天历史记录
+    if (method === 'GET' && path === '/api/ai/history') {
+        try {
+            const cookies = req.headers.cookie || '';
+            const sessionId = cookies.split(';').find(c => c.trim().startsWith('sessionId='))?.split('=')[1];
+            const session = sessionId ? sessionManager.getSession(sessionId) : null;
+            
+            if (!session) {
+                res.writeHead(401, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: '请先登录后再使用此功能' }));
+                return true;
+            }
+            
+            const result = await chatHistoryController.getHistory(session.userId);
+            
+            res.writeHead(result.success ? 200 : 500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(result));
+            return true;
+        } catch (error) {
+            console.error('获取聊天历史路由错误:', error);
+            return false;
+        }
+    }
+    
+    // 删除聊天历史记录
+    if (method === 'DELETE' && path.startsWith('/api/ai/history/')) {
+        try {
+            const historyId = path.split('/').pop();
+            const cookies = req.headers.cookie || '';
+            const sessionId = cookies.split(';').find(c => c.trim().startsWith('sessionId='))?.split('=')[1];
+            const session = sessionId ? sessionManager.getSession(sessionId) : null;
+            
+            if (!session) {
+                res.writeHead(401, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: false, error: '请先登录后再使用此功能' }));
+                return true;
+            }
+            
+            const result = await chatHistoryController.deleteHistory(session.userId, historyId);
+            
+            res.writeHead(result.success ? 200 : 500, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(result));
+            return true;
+        } catch (error) {
+            console.error('删除聊天历史路由错误:', error);
+            return false;
+        }
+    }
 
     // 创建异步任务
     if (method === 'POST' && path === '/api/ai/create-task') {

@@ -20,6 +20,18 @@ async function initializeDatabase() {
             )
         `);
         
+        // 创建chat_history表
+        await execSQLWithPromise(`
+            CREATE TABLE IF NOT EXISTS chat_history (
+                id INT PRIMARY KEY AUTO_INCREMENT,
+                user_id INT NOT NULL,
+                title VARCHAR(255) NOT NULL,
+                content TEXT NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            )
+        `);
+        
         console.log('数据库初始化完成');
         return true;
     } catch (error) {
