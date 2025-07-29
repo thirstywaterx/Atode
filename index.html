@@ -236,12 +236,181 @@
         <script src="./node_modules/sober/dist/sober.min.js"></script>
         <script>
             const signinButton = document.getElementById('signin-button');
-            window.addEventListener('click', function (event) {
-                if (event.target === signinButton) {
-                    const dialog = document.querySelector('s-dialog');
-                    dialog.showed = !dialog.showed;
+            const dialog = document.querySelector('s-dialog');
+            const userAvatar = document.getElementById('user-avatar');
+            const registerButton = document.querySelector('s-button[type="outlined"]');
+            const loginButton = document.getElementById('submit');
+            const progressIndicator = document.getElementById('progress');
+            let currentUser = null;
+
+            // 检查会话状态
+            async function checkSession() {
+                try {
+                    const response = await fetch('/api/session');
+                    const data = await response.json();
+                    if (data.success && data.user) {
+                        currentUser = data.user;
+                        updateUIForLoggedInUser(data.user);
+                    } else {
+                        updateUIForLoggedOutUser();
+                    }
+                } catch (error) {
+                    console.error('检查会话失败:', error);
+                    updateUIForLoggedOutUser();
+                }
+            }
+
+            // 更新已登录用户的UI
+            function updateUIForLoggedInUser(user) {
+                const avatar = userAvatar.querySelector('s-avatar');
+                avatar.innerText = user.username.substring(0, 2).toUpperCase();
+                
+                // 更新用户菜单
+                const userMenu = document.getElementById('signin-button');
+                userMenu.innerText = '登出';
+                
+                console.log('用户已登录:', user.username);
+            }
+
+            // 更新未登录用户的UI
+            function updateUIForLoggedOutUser() {
+                const avatar = userAvatar.querySelector('s-avatar');
+                avatar.innerText = 'US';
+                
+                // 更新用户菜单
+                const userMenu = document.getElementById('signin-button');
+                userMenu.innerText = '登录';
+                
+                currentUser = null;
+                console.log('用户未登录');
+            }
+
+            // 处理登录
+            async function login() {
+                const usernameField = document.querySelector('s-text-field[label="请输入用户名"]');
+                const passwordField = document.querySelector('s-text-field[label="请输入密码"]');
+                const rememberMe = document.querySelector('s-checkbox').checked;
+                
+                const username = usernameField.value;
+                const password = passwordField.value;
+                
+                if (!username || !password) {
+                    alert('请输入用户名和密码');
+                    return;
+                }
+                
+                try {
+                    progressIndicator.style.display = 'inline-block';
+                    loginButton.disabled = true;
+                    
+                    const response = await fetch('/api/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            username,
+                            password,
+                            rememberMe
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        dialog.showed = false;
+                        currentUser = data.user;
+                        updateUIForLoggedInUser(data.user);
+                        passwordField.value = '';
+                    } else {
+                        alert(data.error || '登录失败');
+                    }
+                } catch (error) {
+                    console.error('登录请求失败:', error);
+                    alert('登录请求失败，请稍后重试');
+                } finally {
+                    progressIndicator.style.display = 'none';
+                    loginButton.disabled = false;
+                }
+            }
+
+            // 处理注册
+            async function register() {
+                const usernameField = document.querySelector('s-text-field[label="请输入用户名"]');
+                const passwordField = document.querySelector('s-text-field[label="请输入密码"]');
+                
+                const username = usernameField.value;
+                const password = passwordField.value;
+                
+                if (!username || !password) {
+                    alert('请输入用户名和密码');
+                    return;
+                }
+                
+                try {
+                    progressIndicator.style.display = 'inline-block';
+                    registerButton.disabled = true;
+                    
+                    const response = await fetch('/api/register', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            username,
+                            password
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        alert('注册成功，请登录');
+                        // 保持对话框打开，让用户可以直接登录
+                    } else {
+                        alert(data.error || '注册失败');
+                    }
+                } catch (error) {
+                    console.error('注册请求失败:', error);
+                    alert('注册请求失败，请稍后重试');
+                } finally {
+                    progressIndicator.style.display = 'none';
+                    registerButton.disabled = false;
+                }
+            }
+
+            // 处理登出
+            async function logout() {
+                try {
+                    const response = await fetch('/api/logout', {
+                        method: 'POST'
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        updateUIForLoggedOutUser();
+                    }
+                } catch (error) {
+                    console.error('登出请求失败:', error);
+                }
+            }
+
+            // 事件监听器
+            window.addEventListener('load', checkSession);
+            
+            signinButton.addEventListener('click', function() {
+                if (currentUser) {
+                    // 已登录，执行登出
+                    logout();
+                } else {
+                    // 未登录，显示登录对话框
+                    dialog.showed = true;
                 }
             });
+
+            loginButton.addEventListener('click', login);
+            registerButton.addEventListener('click', register);
         </script>
         <script>
             const output = document.getElementById('output');

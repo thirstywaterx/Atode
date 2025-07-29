@@ -1,8 +1,18 @@
 const fs = require('fs');
 const path = require('path');
-// 移除旧的AIRoute，因为所有AI交互都将通过WebSocket进行
-// const AIRoute = require('./src/routes/aihandel.js');
+// 引入认证路由和数据库初始化
+const authRoutes = require('./src/routes/auth.js');
+const { initializeDatabase } = require('./src/db/initDb.js');
+const AIData = require('./src/routes/aihandel.js');
 
+// 初始化数据库
+initializeDatabase().then(success => {
+    if (success) {
+        console.log('✅ 数据库初始化成功');
+    } else {
+        console.error('❌ 数据库初始化失败');
+    }
+});
 
 // MIME 类型映射
 const mimeTypes = {
@@ -26,12 +36,17 @@ const serverHandler = async (req, res) => {
         req.path = '/index.html';
     }
 
-    // 移除对旧HTTP AI路由的调用
-    // const AIResult = await AIRoute(req, res);
-    // if (AIResult === true) {
-    //     // AI路由已处理完成，直接返回
-    //     return;
-    // }
+    // 处理认证路由
+    const authResult = await authRoutes(req, res);
+    if (authResult === true) {
+        return;
+    }
+    
+    // 处理AI路由
+    const AIResult = await AIData(req, res);
+    if (AIResult === true) {
+        return;
+    }
 
     // 构建文件路径（指向上级目录 d:\Cloudode）
     const filePath = path.join(__dirname, '..', req.path);

@@ -3,7 +3,7 @@ const mysql = require('mysql2'); // 改为 mysql2
 const connection = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: 'root',
+    password: '@Aa2257436167',
     port: 3306, // 改为数字
     database: 'cloudode',
 });
@@ -26,6 +26,21 @@ function execSQL(sql, params, callback) {
     connection.query(sql, params, callback);
 }
 
+// 添加Promise版本的SQL查询函数
+function execSQLWithPromise(sql, params = []) {
+    return new Promise((resolve, reject) => {
+        connection.query(sql, params, (error, results) => {
+            if (error) {
+                reject(error);
+            } else {
+                resolve(results);
+            }
+        });
+    });
+}
+
 module.exports = {
-    execSQL
+    execSQL,
+    execSQLWithPromise,
+    connection
 };
