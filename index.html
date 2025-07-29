@@ -168,6 +168,8 @@
                             </svg>
                         </s-icon-button>
                     </s-text-field>
+                    <div class="link">
+                    </div>
                     <s-button id="submit" style="border-radius: 4px;box-shadow: none;" onclick="login()">
                         <s-circular-progress indeterminate="true" slot="start" id="progress"
                             style="display: none;"></s-circular-progress> 登录
@@ -287,8 +289,6 @@
             async function login() {
                 const usernameField = document.querySelector('s-text-field[label="请输入用户名"]');
                 const passwordField = document.querySelector('s-text-field[label="请输入密码"]');
-                const rememberMe = document.querySelector('s-checkbox').checked;
-                
                 const username = usernameField.value;
                 const password = passwordField.value;
                 
@@ -308,8 +308,7 @@
                         },
                         body: JSON.stringify({
                             username,
-                            password,
-                            rememberMe
+                            password
                         })
                     });
                     
