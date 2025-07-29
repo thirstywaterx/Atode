@@ -9,8 +9,9 @@
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
     <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github.min.css">
-    
+    <link rel="stylesheet"
+        href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/github.min.css">
+
     <style>
         /* 基础重置和布局 */
         body {
@@ -20,11 +21,10 @@
         }
 
         #output {
-            position: absolute;
+            position: relative;
             top: 50px;
             width: 90%;
             min-height: calc(100vh - 200px);
-            border: 1px solid #ccc;
             left: 50%;
             transform: translateX(-50%);
             overflow-y: auto;
@@ -32,20 +32,64 @@
             box-sizing: border-box;
         }
 
+        #space {
+            position: relative;
+            bottom: 0;
+            width: 100%;
+            height: 200px;
+        }
+
         #prompt_input {
             position: fixed;
             bottom: 15px;
             left: 50%;
             transform: translateX(-50%);
-            width: 500px;
+            width: 90%;
+            max-width: 500px;
             height: 100px;
             background-color: white;
+            margin-bottom: 25px;
         }
 
         .prompt_button {
             position: absolute;
             bottom: 3px;
             right: 3px;
+        }
+
+        #user {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            width: 180px;
+            height: 55px;
+            background-color: #f6f8fa;
+        }
+
+        #user .menu-button {
+            position: relative;
+            float: right;
+            width: 40px;
+            height: 40px;
+            top: 50%;
+            transform: translateY(-50%);
+            border-radius: 100%;
+            margin-right: -4px;
+        }
+
+        #user .menu-button svg {
+            transform: scale(0.8);
+            fill: #40484C;
+        }
+
+        #user-avatar {
+            position: relative;
+            float: right;
+            top: 50%;
+            right: 5px;
+            transform: translateY(-50%);
+            border-radius: 100%;
+            margin-left: 18px;
         }
 
         /* 基础Markdown样式 */
@@ -60,373 +104,497 @@
             padding: 16px;
             overflow-x: auto;
         }
+
+        :not(:defined) {
+            display: none;
+        }
+
+        .dialog {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding: 24px;
+        }
+
+        .dialog>.text-field {
+            flex-grow: 1;
+            width: auto;
+        }
+
+        .dialog>.link {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: .875rem;
+        }
+
+        .dialog>.link>a {
+            color: var(--s-color-primary);
+            text-decoration: none;
+        }
+
+        .dialog>.other {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            padding: 0 24px;
+        }
     </style>
 </head>
 
 <body>
-    <div id="output"></div>
+    <s-page>
+            <s-dialog showed="false">
+                <div slot="headline">登录/注册</div>
+                <div class="dialog">
+                    <s-text-field class="text-field" label="请输入用户名">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" slot="start">
+                            <path
+                                d="M480-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM160-160v-112q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440q66 0 130 15.5T736-378q29 15 46.5 43.5T800-272v112H160Zm80-80h480v-32q0-11-5.5-20T700-306q-54-27-109-40.5T480-360q-56 0-111 13.5T260-306q-9 5-14.5 14t-5.5 20v32Zm240-320q33 0 56.5-23.5T560-640q0-33-23.5-56.5T480-720q-33 0-56.5 23.5T400-640q0 33 23.5 56.5T480-560Zm0-80Zm0 400Z">
+                            </path>
+                        </svg>
+                    </s-text-field>
+                    <s-text-field class="text-field" style="margin-top: 8px;" label="请输入密码" type="password">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" slot="start">
+                            <path
+                                d="M80-200v-80h800v80H80Zm46-242-52-30 34-60H40v-60h68l-34-58 52-30 34 58 34-58 52 30-34 58h68v60h-68l34 60-52 30-34-60-34 60Zm320 0-52-30 34-60h-68v-60h68l-34-58 52-30 34 58 34-58 52 30-34 58h68v60h-68l34 60-52 30-34-60-34 60Zm320 0-52-30 34-60h-68v-60h68l-34-58 52-30 34 58 34-58 52 30-34 58h68v60h-68l34 60-52 30-34-60-34 60Z">
+                            </path>
+                        </svg>
+                        <s-icon-button slot="end">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
+                                <path
+                                    d="M480-320q75 0 127.5-52.5T660-500q0-75-52.5-127.5T480-680q-75 0-127.5 52.5T300-500q0 75 52.5 127.5T480-320Zm0-72q-45 0-76.5-31.5T372-500q0-45 31.5-76.5T480-608q45 0 76.5 31.5T588-500q0 45-31.5 76.5T480-392Zm0 192q-146 0-266-81.5T40-500q54-137 174-218.5T480-800q146 0 266 81.5T920-500q-54 137-174 218.5T480-200Zm0-300Zm0 220q113 0 207.5-59.5T832-500q-50-101-144.5-160.5T480-720q-113 0-207.5 59.5T128-500q50 101 144.5 160.5T480-280Z">
+                                </path>
+                            </svg>
+                        </s-icon-button>
+                    </s-text-field>
+                    <div class="link">
+                        <s-checkbox style="margin: -8px 0 -8px -8px;" checked="true">记住登录状态</s-checkbox>                    </div>
+                    <s-button id="submit" style="border-radius: 4px;box-shadow: none;" onclick="login()">
+                        <s-circular-progress indeterminate="true" slot="start" id="progress"
+                            style="display: none;"></s-circular-progress> 登录
+                    </s-button>
+                    <s-button type="outlined" style="border-radius: 4px;">注册账号</s-button>
+                </div>
+            </s-dialog>
 
-    <s-text-field id="prompt_input" label="请输入Prompt" type="multiLine" style="min-height: 96px">
-        <s-icon-button class="prompt_button" slot="end">
-            <svg viewBox="0 -960 960 960">
-                <path d="M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z"></path>
-            </svg>
-        </s-icon-button>
-    </s-text-field>
+            <s-card id="user">
+                <s-popup-menu id="user-avatar">
+                    <s-ripple style="border-radius: 100%;" slot="trigger"><s-avatar>US</s-avatar></s-ripple>
+                    <s-popup-menu-item id="signin-button">登录</s-popup-menu-item>
+                </s-popup-menu>
 
-    <script src="./node_modules/sober/dist/sober.min.js"></script>
-    <script>
-        const output = document.getElementById('output');
-        const promptInput = document.getElementById('prompt_input');
-        const submitButton = document.querySelector('.prompt_button');
-        
-        // WebSocket连接和状态管理
-        let ws = null;
-        let isConnected = false;
-        let isProcessing = false;
-        let conversationHistory = [];
-        let currentMessageId = null;
+                <s-ripple class="menu-button">
+                    <svg viewBox="0 -960 960 960">
+                        <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"></path>
+                    </svg>
+                </s-ripple>
 
-        // 修正SVG图标
-        const sendIcon = `<svg viewBox="0 -960 960 960"><path d="M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z"></path></svg>`;
-        const stopIcon = `<svg viewBox="0 -960 960 960"><path d="M520-200v-560h240v560H520Zm-320 0v-560h240v560H200Z"></path></svg>`;
+                <s-popup class="menu-button">
 
-        // 配置 marked.js
-        marked.setOptions({
-            highlight: function(code, lang) {
-                if (lang && hljs.getLanguage(lang)) {
-                    try {
-                        return hljs.highlight(code, { language: lang }).value;
-                    } catch (err) {}
+                    <s-icon-button slot="trigger">
+                        <svg viewBox="0 -960 960 960" style="transform: scale(1.4);">
+                            <path
+                                d="M480-120q-138 0-240.5-91.5T122-440h82q14 104 92.5 172T480-200q117 0 198.5-81.5T760-480q0-117-81.5-198.5T480-760q-69 0-129 32t-101 88h110v80H120v-240h80v94q51-64 124.5-99T480-840q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-480q0 75-28.5 140.5t-77 114q-48.5 48.5-114 77T480-120Zm112-192L440-464v-216h80v184l128 128-56 56Z">
+                            </path>
+                        </svg>
+                    </s-icon-button>
+
+                    <div style="min-height: 280px; width: 256px">
+
+                    </div>
+
+                </s-popup>
+
+
+                <s-ripple class="menu-button">
+                    <svg viewBox="0 -960 960 960" style="transform: scale(0.78);">
+                        <path
+                            d="m370-80-16-128q-13-5-24.5-12T307-235l-119 50L78-375l103-78q-1-7-1-13.5v-27q0-6.5 1-13.5L78-585l110-190 119 50q11-8 23-15t24-12l16-128h220l16 128q13 5 24.5 12t22.5 15l119-50 110 190-103 78q1 7 1 13.5v27q0 6.5-2 13.5l103 78-110 190-118-50q-11 8-23 15t-24 12L590-80H370Zm70-80h79l14-106q31-8 57.5-23.5T639-327l99 41 39-68-86-65q5-14 7-29.5t2-31.5q0-16-2-31.5t-7-29.5l86-65-39-68-99 42q-22-23-48.5-38.5T533-694l-13-106h-79l-14 106q-31 8-57.5 23.5T321-633l-99-41-39 68 86 64q-5 15-7 30t-2 32q0 16 2 31t7 30l-86 65 39 68 99-42q22 23 48.5 38.5T427-266l13 106Zm42-180q58 0 99-41t41-99q0-58-41-99t-99-41q-59 0-99.5 41T342-480q0 58 40.5 99t99.5 41Zm-2-140Z">
+                        </path>
+                    </svg>
+                </s-ripple>
+
+            </s-card>
+
+            <div id="output"></div>
+            <div id="space"></div>
+
+
+            <s-text-field id="prompt_input" label="请输入Prompt" type="multiLine" style="min-height: 96px">
+                <s-icon-button class="prompt_button" id="send" slot="end">
+                    <svg viewBox="0 -960 960 960">
+                        <path
+                            d="M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z">
+                        </path>
+                    </svg>
+                </s-icon-button>
+            </s-text-field>
+
+        </s-page>
+
+        <script src="./node_modules/sober/dist/sober.min.js"></script>
+        <script>
+            const signinButton = document.getElementById('signin-button');
+            window.addEventListener('click', function (event) {
+                if (event.target === signinButton) {
+                    const dialog = document.querySelector('s-dialog');
+                    dialog.showed = !dialog.showed;
                 }
-                return hljs.highlightAuto(code).value;
-            },
-            langPrefix: 'hljs language-',
-            breaks: true,
-            gfm: true
-        });
+            });
+        </script>
+        <script>
+            const output = document.getElementById('output');
+            const promptInput = document.getElementById('prompt_input');
+            const submitButton = document.querySelector('#send');
 
-        // 初始化WebSocket连接
-        function initWebSocket() {
-            const wsUrl = `ws://${window.location.host}`;
-            console.log('🔌 连接WebSocket:', wsUrl);
-            
-            ws = new WebSocket(wsUrl);
+            // WebSocket连接和状态管理
+            let ws = null;
+            let isConnected = false;
+            let isProcessing = false;
+            let conversationHistory = [];
+            let currentMessageId = null;
 
-            ws.onopen = function(event) {
-                console.log('✅ WebSocket连接成功');
-                isConnected = true;
-            };
+            // 修正SVG图标
+            const sendIcon = `<svg viewBox="0 -960 960 960"><path d="M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z"></path></svg>`;
+            const stopIcon = `<svg viewBox="0 -960 960 960"><path d="M520-200v-560h240v560H520Zm-320 0v-560h240v560H200Z"></path></svg>`;
 
-            ws.onmessage = function(event) {
-                console.log('🔔 原始WebSocket消息:', event.data);
-                try {
-                    const message = JSON.parse(event.data);
-                    handleWebSocketMessage(message);
-                } catch (error) {
-                    console.error('❌ 消息解析失败:', error, '原始数据:', event.data);
-                }
-            };
-
-            ws.onclose = function(event) {
-                console.log('❌ WebSocket连接关闭', event.code, event.reason);
-                isConnected = false;
-                isProcessing = false;
-                
-                // 5秒后尝试重连
-                setTimeout(initWebSocket, 5000);
-            };
-
-            ws.onerror = function(error) {
-                console.error('WebSocket错误:', error);
-            };
-        }
-
-        // 处理WebSocket消息
-        function handleWebSocketMessage(message) {
-            console.log('📨 收到消息类型:', message.type);
-            console.log('📊 完整消息内容:', message);
-
-            switch (message.type) {
-                case 'processing_start':
-                    console.log('🚀 开始处理...');
-                    isProcessing = true;
-                    setProcessingState(true);
-                    currentMessageId = `msg-${Date.now()}`;
-                    const startDiv = `<div id="${currentMessageId}"><p><strong>AI：</strong>正在处理...</p></div>`;
-                    output.innerHTML += startDiv;
-                    console.log('✅ 已添加处理容器:', currentMessageId);
-                    break;
-
-                case 'coordination_progress':
-                    console.log('🔄 协调进度:', message.message, message.progress + '%');
-                    const progressContainer = document.getElementById(currentMessageId);
-                    if (progressContainer) {
-                        progressContainer.innerHTML = `<p><strong>AI：</strong>🚀 ${message.stage}/6 ${message.message}</p>`;
-                        console.log('✅ 已更新进度显示');
-                    } else {
-                        console.warn('⚠️ 找不到进度容器:', currentMessageId);
+            // 配置 marked.js
+            marked.setOptions({
+                highlight: function (code, lang) {
+                    if (lang && hljs.getLanguage(lang)) {
+                        try {
+                            return hljs.highlight(code, { language: lang }).value;
+                        } catch (err) { }
                     }
-                    break;
-
-                case 'stream_start':
-                    console.log('🟢 开始流式传输');
-                    const startContainer = document.getElementById(currentMessageId);
-                    if (startContainer) {
-                        startContainer.innerHTML = `<p><strong>AI：</strong></p><div class="markdown-content">开始接收内容...</div>`;
-                        console.log('✅ 已准备内容容器');
-                    } else {
-                        console.warn('⚠️ 找不到开始容器:', currentMessageId);
-                    }
-                    break;
-
-                case 'stream_chunk':
-                    console.log('📦 收到数据块，内容长度:', message.fullContent ? message.fullContent.length : 0);
-                    console.log('📋 数据块内容预览:', message.fullContent ? message.fullContent.substring(0, 100) + '...' : '无内容');
-                    
-                    const container = document.getElementById(currentMessageId);
-                    if (container) {
-                        console.log('✅ 找到容器:', currentMessageId);
-                        if (message.fullContent) {
-                            let contentDiv = container.querySelector('.markdown-content');
-                            if (!contentDiv) {
-                                console.log('⚠️ 创建新的内容容器');
-                                contentDiv = document.createElement('div');
-                                contentDiv.className = 'markdown-content';
-                                container.innerHTML = '<p><strong>AI：</strong></p>';
-                                container.appendChild(contentDiv);
-                            }
-                            
-                            try {
-                                contentDiv.innerHTML = parseMarkdown(message.fullContent);
-                                console.log('✅ 已更新页面内容，当前长度:', contentDiv.innerHTML.length);
-                            } catch (parseError) {
-                                console.error('❌ Markdown解析失败:', parseError);
-                                contentDiv.textContent = message.fullContent;
-                            }
-                        } else {
-                            console.warn('⚠️ 数据块没有fullContent');
-                        }
-                    } else {
-                        console.error('❌ 找不到容器:', currentMessageId, '当前所有容器:', document.querySelectorAll('[id^="msg-"]'));
-                    }
-                    break;
-
-                case 'stream_complete':
-                    console.log('✅ 流式传输完成，最终内容长度:', message.fullContent ? message.fullContent.length : 0);
-                    if (currentMessageId) {
-                        const container = document.getElementById(currentMessageId);
-                        if (container) {
-                            const finalContent = message.fullContent || message.content || '';
-                            console.log('📝 最终内容预览:', finalContent.substring(0, 200) + '...');
-                            
-                            let contentDiv = container.querySelector('.markdown-content');
-                            if (!contentDiv) {
-                                contentDiv = document.createElement('div');
-                                contentDiv.className = 'markdown-content';
-                                container.innerHTML = '<p><strong>AI：</strong></p>';
-                                container.appendChild(contentDiv);
-                            }
-                            
-                            if (finalContent) {
-                                try {
-                                    contentDiv.innerHTML = parseMarkdown(finalContent);
-                                    conversationHistory.push({ role: 'assistant', content: finalContent });
-                                    console.log('✅ 已保存到历史记录，当前历史长度:', conversationHistory.length);
-                                } catch (parseError) {
-                                    console.error('❌ 最终内容解析失败:', parseError);
-                                    contentDiv.textContent = finalContent;
-                                }
-                            } else {
-                                console.warn('⚠️ 没有最终内容');
-                                contentDiv.innerHTML = '<p><em>未收到内容</em></p>';
-                            }
-                        } else {
-                            console.error('❌ 完成时找不到容器:', currentMessageId);
-                        }
-                    }
-                    isProcessing = false;
-                    setProcessingState(false);
-                    break;
-
-                case 'error':
-                    console.error('❌ 收到错误:', message.message);
-                    isProcessing = false;
-                    setProcessingState(false);
-                    output.innerHTML += `<p><strong>错误:</strong> ${message.message}</p>`;
-                    break;
-
-                default:
-                    console.log('❓ 未知消息类型:', message.type, message);
-            }
-
-            output.scrollTop = output.scrollHeight;
-        }
-
-        // 监听按钮点击事件
-        submitButton.addEventListener('click', async (event) => {
-            event.preventDefault();
-            
-            if (isProcessing) {
-                await stopProcessing();
-            } else {
-                await sendPromptWebSocket();
-            }
-        });
-
-        // 监听表单提交事件
-        promptInput.addEventListener('submit', async (event) => {
-            event.preventDefault();
-            
-            if (!isProcessing) {
-                await sendPromptWebSocket();
-            }
-        });
-
-        // 通过WebSocket发送消息
-        async function sendPromptWebSocket() {
-            const prompt = promptInput.value.trim();
-            
-            if (!prompt) {
-                alert('请输入内容');
-                return;
-            }
-
-            if (!isConnected) {
-                alert('WebSocket未连接，请等待连接恢复');
-                return;
-            }
-
-            if (isProcessing) {
-                alert('AI正在处理中，请稍候');
-                return;
-            }
-
-            // 显示用户输入
-            output.innerHTML += `<p><strong>用户:</strong> ${prompt}</p>`;
-            
-            // 添加用户消息到历史记录
-            conversationHistory.push({
-                role: 'user',
-                content: prompt
+                    return hljs.highlightAuto(code).value;
+                },
+                langPrefix: 'hljs language-',
+                breaks: true,
+                gfm: true
             });
 
-            // 更精确的意图识别
-            const lowerPrompt = prompt.toLowerCase();
-            
-            // 首先检测文字创作需求
-            const isWritingRequest = /写.*?(小说|故事|文章|散文|诗歌|剧本|日记|传记|报告|论文|说明|介绍|分析|评论|总结)/.test(lowerPrompt) ||
-                                   /创作.*?(小说|故事|文章|散文|诗歌|剧本)/.test(lowerPrompt) ||
-                                   /^(小说|故事|文章|散文|诗歌|剧本|日记|传记|报告|论文|说明|介绍|分析|评论|总结)/.test(lowerPrompt);
-            
-            // 检测代码开发需求
-            const isCodeRequest = /写|生成|创建|制作.*?(网页|网站|页面|代码|html|css|js|程序|应用|主页|界面|布局|系统)/.test(lowerPrompt) ||
-                                 /开发|设计|实现.*?(页面|网站|网页|应用|系统)/.test(lowerPrompt);
-            
-            // 明确的否定
-            const explicitNoCode = /不要.*代码|不写.*代码|不需要.*代码|只要.*文字|只需要.*文字|纯文字说明/.test(lowerPrompt);
+            // 初始化WebSocket连接
+            function initWebSocket() {
+                const wsUrl = `ws://${window.location.host}`;
+                console.log('🔌 连接WebSocket:', wsUrl);
 
-            // 优先级：写作需求 > 明确不要代码 > 代码需求
-            let useCoordinator;
-            if (isWritingRequest || explicitNoCode) {
-                useCoordinator = true;  // 文字创作也使用协调器，但会分配给写作AI
-                console.log('📝 识别为文字创作需求，使用写作专家AI');
-            } else if (isCodeRequest) {
-                useCoordinator = true;  // 代码开发使用协调器，分配给代码AI
-                console.log('💻 识别为代码开发需求，使用代码专家AI');
-            } else {
-                useCoordinator = false; // 普通问答不使用协调器
-                console.log('💬 识别为普通问答，使用基础AI');
-            }
-            
-            console.log(`🤖 智能判断: 写作需求=${isWritingRequest}, 代码需求=${isCodeRequest}, 明确不要代码=${explicitNoCode}, 使用协调器=${useCoordinator}`);
+                ws = new WebSocket(wsUrl);
 
-            // 通过WebSocket发送请求
-            const message = {
-                prompt: prompt,
-                history: conversationHistory,
-                useCoordinator: useCoordinator
-            };
+                ws.onopen = function (event) {
+                    console.log('✅ WebSocket连接成功');
+                    isConnected = true;
+                };
 
-            console.log('📤 发送消息到服务器:', message);
-            ws.send(JSON.stringify(message));
-            
-            promptInput.value = '';
-            output.scrollTop = output.scrollHeight;
-        }
+                ws.onmessage = function (event) {
+                    console.log('🔔 原始WebSocket消息:', event.data);
+                    try {
+                        const message = JSON.parse(event.data);
+                        handleWebSocketMessage(message);
+                    } catch (error) {
+                        console.error('❌ 消息解析失败:', error, '原始数据:', event.data);
+                    }
+                };
 
-        // 停止处理
-        async function stopProcessing() {
-            if (isConnected && ws) {
-                ws.send(JSON.stringify({ type: 'stop_task' }));
-            }
-            
-            // 立即更新UI状态
-            isProcessing = false;
-            setProcessingState(false);
+                ws.onclose = function (event) {
+                    console.log('❌ WebSocket连接关闭', event.code, event.reason);
+                    isConnected = false;
+                    isProcessing = false;
 
-            // 立即在UI上显示任务已停止
-            const container = document.getElementById(currentMessageId);
-            if (container) {
-                container.innerHTML += '<p><strong>系统:</strong> 任务已停止。</p>';
-            }
-        }
+                    // 5秒后尝试重连
+                    setTimeout(initWebSocket, 5000);
+                };
 
-        function setProcessingState(processing) {
-            isProcessing = processing;
-            if (processing) {
-                submitButton.innerHTML = stopIcon;
-                submitButton.setAttribute('aria-label', '停止处理');
-            } else {
-                submitButton.innerHTML = sendIcon;
-                submitButton.setAttribute('aria-label', '发送消息');
-            }
-        }
-
-        /**
-         * 使用 marked.js 解析 Markdown
-         */
-        function parseMarkdown(markdown) {
-            if (!markdown || typeof markdown !== 'string') {
-                return markdown;
+                ws.onerror = function (error) {
+                    console.error('WebSocket错误:', error);
+                };
             }
 
-            try {
-                // 1. 使用 marked.js 解析 Markdown
-                let html = marked.parse(markdown);
+            // 处理WebSocket消息
+            function handleWebSocketMessage(message) {
+                console.log('📨 收到消息类型:', message.type);
+                console.log('📊 完整消息内容:', message);
 
-                // 2. 使用 DOMPurify 清理HTML，防止XSS攻击
-                html = DOMPurify.sanitize(html);
-                
-                return html;
-            } catch (error) {
-                console.error('Markdown 解析错误:', error);
-                return markdown;
-            }
-        }
+                switch (message.type) {
+                    case 'processing_start':
+                        console.log('🚀 开始处理...');
+                        isProcessing = true;
+                        setProcessingState(true);
+                        currentMessageId = `msg-${Date.now()}`;
+                        const startDiv = `<div id="${currentMessageId}"><p><strong>AI：</strong>正在处理...</p></div>`;
+                        output.innerHTML += startDiv;
+                        console.log('✅ 已添加处理容器:', currentMessageId);
+                        break;
 
-        // 心跳检测
-        function startHeartbeat() {
-            setInterval(() => {
-                if (isConnected && ws && ws.readyState === WebSocket.OPEN) {
-                    ws.send(JSON.stringify({ type: 'ping' }));
+                    case 'coordination_progress':
+                        console.log('🔄 协调进度:', message.message, message.progress + '%');
+                        const progressContainer = document.getElementById(currentMessageId);
+                        if (progressContainer) {
+                            progressContainer.innerHTML = `<p><strong>AI：</strong>🚀 ${message.stage}/6 ${message.message}</p>`;
+                            console.log('✅ 已更新进度显示');
+                        } else {
+                            console.warn('⚠️ 找不到进度容器:', currentMessageId);
+                        }
+                        break;
+
+                    case 'stream_start':
+                        console.log('🟢 开始流式传输');
+                        const startContainer = document.getElementById(currentMessageId);
+                        if (startContainer) {
+                            startContainer.innerHTML = `<p><strong>AI：</strong></p><div class="markdown-content">开始接收内容...</div>`;
+                            console.log('✅ 已准备内容容器');
+                        } else {
+                            console.warn('⚠️ 找不到开始容器:', currentMessageId);
+                        }
+                        break;
+
+                    case 'stream_chunk':
+                        console.log('📦 收到数据块，内容长度:', message.fullContent ? message.fullContent.length : 0);
+                        console.log('📋 数据块内容预览:', message.fullContent ? message.fullContent.substring(0, 100) + '...' : '无内容');
+
+                        const container = document.getElementById(currentMessageId);
+                        if (container) {
+                            console.log('✅ 找到容器:', currentMessageId);
+                            if (message.fullContent) {
+                                let contentDiv = container.querySelector('.markdown-content');
+                                if (!contentDiv) {
+                                    console.log('⚠️ 创建新的内容容器');
+                                    contentDiv = document.createElement('div');
+                                    contentDiv.className = 'markdown-content';
+                                    container.innerHTML = '<p><strong>AI：</strong></p>';
+                                    container.appendChild(contentDiv);
+                                }
+
+                                try {
+                                    contentDiv.innerHTML = parseMarkdown(message.fullContent);
+                                    console.log('✅ 已更新页面内容，当前长度:', contentDiv.innerHTML.length);
+                                } catch (parseError) {
+                                    console.error('❌ Markdown解析失败:', parseError);
+                                    contentDiv.textContent = message.fullContent;
+                                }
+                            } else {
+                                console.warn('⚠️ 数据块没有fullContent');
+                            }
+                        } else {
+                            console.error('❌ 找不到容器:', currentMessageId, '当前所有容器:', document.querySelectorAll('[id^="msg-"]'));
+                        }
+                        break;
+
+                    case 'stream_complete':
+                        console.log('✅ 流式传输完成，最终内容长度:', message.fullContent ? message.fullContent.length : 0);
+                        if (currentMessageId) {
+                            const container = document.getElementById(currentMessageId);
+                            if (container) {
+                                const finalContent = message.fullContent || message.content || '';
+                                console.log('📝 最终内容预览:', finalContent.substring(0, 200) + '...');
+
+                                let contentDiv = container.querySelector('.markdown-content');
+                                if (!contentDiv) {
+                                    contentDiv = document.createElement('div');
+                                    contentDiv.className = 'markdown-content';
+                                    container.innerHTML = '<p><strong>AI：</strong></p>';
+                                    container.appendChild(contentDiv);
+                                }
+
+                                if (finalContent) {
+                                    try {
+                                        contentDiv.innerHTML = parseMarkdown(finalContent);
+                                        conversationHistory.push({ role: 'assistant', content: finalContent });
+                                        console.log('✅ 已保存到历史记录，当前历史长度:', conversationHistory.length);
+                                    } catch (parseError) {
+                                        console.error('❌ 最终内容解析失败:', parseError);
+                                        contentDiv.textContent = finalContent;
+                                    }
+                                } else {
+                                    console.warn('⚠️ 没有最终内容');
+                                    contentDiv.innerHTML = '<p><em>未收到内容</em></p>';
+                                }
+                            } else {
+                                console.error('❌ 完成时找不到容器:', currentMessageId);
+                            }
+                        }
+                        isProcessing = false;
+                        setProcessingState(false);
+                        break;
+
+                    case 'error':
+                        console.error('❌ 收到错误:', message.message);
+                        isProcessing = false;
+                        setProcessingState(false);
+                        output.innerHTML += `<p><strong>错误:</strong> ${message.message}</p>`;
+                        break;
+
+                    default:
+                        console.log('❓ 未知消息类型:', message.type, message);
                 }
-            }, 30000); // 30秒心跳
-        }
 
-        // 页面加载时初始化WebSocket
-        window.addEventListener('load', () => {
-            initWebSocket();
-            startHeartbeat();
-        });
-
-        // 页面卸载时关闭连接
-        window.addEventListener('beforeunload', () => {
-            if (ws) {
-                ws.close();
+                output.scrollTop = output.scrollHeight;
             }
-        });
-    </script>
+
+            // 监听按钮点击事件
+            submitButton.addEventListener('click', async (event) => {
+                event.preventDefault();
+
+                if (isProcessing) {
+                    await stopProcessing();
+                } else {
+                    await sendPromptWebSocket();
+                }
+            });
+
+            // 监听表单提交事件
+            promptInput.addEventListener('submit', async (event) => {
+                event.preventDefault();
+
+                if (!isProcessing) {
+                    await sendPromptWebSocket();
+                }
+            });
+
+            // 通过WebSocket发送消息
+            async function sendPromptWebSocket() {
+                const prompt = promptInput.value.trim();
+
+                if (!prompt) {
+                    alert('请输入内容');
+                    return;
+                }
+
+                if (!isConnected) {
+                    alert('WebSocket未连接，请等待连接恢复');
+                    return;
+                }
+
+                if (isProcessing) {
+                    alert('AI正在处理中，请稍候');
+                    return;
+                }
+
+                // 显示用户输入
+                output.innerHTML += `<p><strong>用户:</strong> ${prompt}</p>`;
+
+                // 添加用户消息到历史记录
+                conversationHistory.push({
+                    role: 'user',
+                    content: prompt
+                });
+
+                // 更精确的意图识别
+                const lowerPrompt = prompt.toLowerCase();
+
+                // 首先检测文字创作需求
+                const isWritingRequest = /写.*?(小说|故事|文章|散文|诗歌|剧本|日记|传记|报告|论文|说明|介绍|分析|评论|总结)/.test(lowerPrompt) ||
+                    /创作.*?(小说|故事|文章|散文|诗歌|剧本)/.test(lowerPrompt) ||
+                    /^(小说|故事|文章|散文|诗歌|剧本|日记|传记|报告|论文|说明|介绍|分析|评论|总结)/.test(lowerPrompt);
+
+                // 检测代码开发需求
+                const isCodeRequest = /写|生成|创建|制作.*?(网页|网站|页面|代码|html|css|js|程序|应用|主页|界面|布局|系统)/.test(lowerPrompt) ||
+                    /开发|设计|实现.*?(页面|网站|网页|应用|系统)/.test(lowerPrompt);
+
+                // 明确的否定
+                const explicitNoCode = /不要.*代码|不写.*代码|不需要.*代码|只要.*文字|只需要.*文字|纯文字说明/.test(lowerPrompt);
+
+                // 优先级：写作需求 > 明确不要代码 > 代码需求
+                let useCoordinator;
+                if (isWritingRequest || explicitNoCode) {
+                    useCoordinator = true;  // 文字创作也使用协调器，但会分配给写作AI
+                    console.log('📝 识别为文字创作需求，使用写作专家AI');
+                } else if (isCodeRequest) {
+                    useCoordinator = true;  // 代码开发使用协调器，分配给代码AI
+                    console.log('💻 识别为代码开发需求，使用代码专家AI');
+                } else {
+                    useCoordinator = false; // 普通问答不使用协调器
+                    console.log('💬 识别为普通问答，使用基础AI');
+                }
+
+                console.log(`🤖 智能判断: 写作需求=${isWritingRequest}, 代码需求=${isCodeRequest}, 明确不要代码=${explicitNoCode}, 使用协调器=${useCoordinator}`);
+
+                // 通过WebSocket发送请求
+                const message = {
+                    prompt: prompt,
+                    history: conversationHistory,
+                    useCoordinator: useCoordinator
+                };
+
+                console.log('📤 发送消息到服务器:', message);
+                ws.send(JSON.stringify(message));
+
+                promptInput.value = '';
+                output.scrollTop = output.scrollHeight;
+            }
+
+            // 停止处理
+            async function stopProcessing() {
+                if (isConnected && ws) {
+                    ws.send(JSON.stringify({ type: 'stop_task' }));
+                }
+
+                // 立即更新UI状态
+                isProcessing = false;
+                setProcessingState(false);
+
+                // 立即在UI上显示任务已停止
+                const container = document.getElementById(currentMessageId);
+                if (container) {
+                    container.innerHTML += '<p><strong>系统:</strong> 任务已停止。</p>';
+                }
+            }
+
+            function setProcessingState(processing) {
+                isProcessing = processing;
+                if (processing) {
+                    submitButton.innerHTML = stopIcon;
+                    submitButton.setAttribute('aria-label', '停止处理');
+                } else {
+                    submitButton.innerHTML = sendIcon;
+                    submitButton.setAttribute('aria-label', '发送消息');
+                }
+            }
+
+            /**
+             * 使用 marked.js 解析 Markdown
+             */
+            function parseMarkdown(markdown) {
+                if (!markdown || typeof markdown !== 'string') {
+                    return markdown;
+                }
+
+                try {
+                    // 1. 使用 marked.js 解析 Markdown
+                    let html = marked.parse(markdown);
+
+                    // 2. 使用 DOMPurify 清理HTML，防止XSS攻击
+                    html = DOMPurify.sanitize(html);
+
+                    return html;
+                } catch (error) {
+                    console.error('Markdown 解析错误:', error);
+                    return markdown;
+                }
+            }
+
+            // 心跳检测
+            function startHeartbeat() {
+                setInterval(() => {
+                    if (isConnected && ws && ws.readyState === WebSocket.OPEN) {
+                        ws.send(JSON.stringify({ type: 'ping' }));
+                    }
+                }, 30000); // 30秒心跳
+            }
+
+            // 页面加载时初始化WebSocket
+            window.addEventListener('load', () => {
+                initWebSocket();
+                startHeartbeat();
+            });
+
+            // 页面卸载时关闭连接
+            window.addEventListener('beforeunload', () => {
+                if (ws) {
+                    ws.close();
+                }
+            });
+        </script>
 </body>
 
 </html>

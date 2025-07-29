@@ -3,9 +3,9 @@ const mysql = require('mysql2'); // 改为 mysql2
 const connection = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: '@Aa2257436167',
+    password: 'root',
     port: 3306, // 改为数字
-    database: 'myblog'
+    database: 'cloudode',
 });
 
 connection.connect((err) => {
