@@ -15,17 +15,51 @@ async function getAIPrompt(prompt, history = [], signal) {
             return reject(new DOMException('请求已中止', 'AbortError'));
         }
 
-        // 简化内容构建，只发送当前prompt
-        const requestBody = {
-            contents: [{
-                parts: [{
-                    text: prompt
-                }]
-            }]
-        };
-
+        // 构建包含历史记录的请求体
+        let contents = [];
+        
+        // 处理历史记录
+        if (history && history.length > 0) {
+            // 确保历史记录按时间排序
+            const sortedHistory = [...history].sort((a, b) => 
+                history.indexOf(a) - history.indexOf(b)
+            );
+            
+            // 过滤掉无效记录
+            const validHistory = sortedHistory.filter(msg => 
+                msg && (msg.role === 'user' || msg.role === 'assistant') && msg.content
+            );
+            
+            // 确保对话交替进行(不应出现连续两个相同角色的消息)
+            let lastRole = null;
+            for (const msg of validHistory) {
+                // 如果当前消息角色与上一个相同，则跳过
+                if (lastRole === msg.role) {
+                    console.log(`⚠️ 警告: 检测到连续的 ${msg.role} 消息，跳过以确保对话交替`);
+                    continue;
+                }
+                
+                contents.push({
+                    role: msg.role === 'user' ? 'user' : 'model',
+                    parts: [{ text: msg.content }]
+                });
+                
+                lastRole = msg.role;
+            }
+        }
+        
+        // 确保最后一条消息是用户的消息
+        const lastMsg = contents.length > 0 ? contents[contents.length - 1] : null;
+        if (!lastMsg || lastMsg.role !== 'user') {
+            contents.push({
+                role: 'user',
+                parts: [{ text: prompt }]
+            });
+        }
+        
+        const requestBody = { contents };
         const data = JSON.stringify(requestBody);
-        console.log('发送数据:', data);
+        console.log('发送数据:', data.substring(0, 200) + '...');
 
         const options = {
             hostname: baseUrl,
@@ -152,9 +186,50 @@ async function getAIPrompt(prompt, history = [], signal) {
 async function getAIPromptStream(prompt, history = [], onChunk, signal) {
     const { apiKey, baseUrl, model } = config.gemini;
     
-    const requestBody = {
-        contents: [{ parts: [{ text: prompt }] }]
-    };
+    // 重构请求体以包含对话历史
+    let contents = [];
+    
+    // 处理历史记录
+    if (history && history.length > 0) {
+        // 确保历史记录按时间排序
+        const sortedHistory = [...history].sort((a, b) => 
+            history.indexOf(a) - history.indexOf(b)
+        );
+        
+        // 过滤掉无效记录
+        const validHistory = sortedHistory.filter(msg => 
+            msg && (msg.role === 'user' || msg.role === 'assistant') && msg.content
+        );
+        
+        // 确保对话交替进行(不应出现连续两个相同角色的消息)
+        let lastRole = null;
+        for (const msg of validHistory) {
+            // 如果当前消息角色与上一个相同，则跳过
+            if (lastRole === msg.role) {
+                console.log(`⚠️ 警告: 检测到连续的 ${msg.role} 消息，跳过以确保对话交替`);
+                continue;
+            }
+            
+            contents.push({
+                role: msg.role === 'user' ? 'user' : 'model',
+                parts: [{ text: msg.content }]
+            });
+            
+            lastRole = msg.role;
+        }
+    }
+    
+    // 确保最后一条消息是用户的消息
+    const lastMsg = contents.length > 0 ? contents[contents.length - 1] : null;
+    if (!lastMsg || lastMsg.role !== 'user') {
+        contents.push({
+            role: 'user',
+            parts: [{ text: prompt }]
+        });
+    }
+    
+    const requestBody = { contents };
+    console.log('发送带历史记录的请求:', JSON.stringify(requestBody).substring(0, 200) + '...');
 
     const options = {
         hostname: baseUrl,
@@ -236,5 +311,4 @@ async function getAIPromptStream(prompt, history = [], onChunk, signal) {
     });
 }
 
-module.exports = { getAIPrompt, getAIPromptStream };
 module.exports = { getAIPrompt, getAIPromptStream };

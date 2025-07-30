@@ -20,6 +20,10 @@
             font-family: Arial, sans-serif;
         }
 
+        s-page {
+            height: calc(100vh + 20px);
+        }
+
         #output {
             position: relative;
             top: 50px;
@@ -182,7 +186,7 @@
                     <s-popup-menu-item id="signin-button">登录</s-popup-menu-item>
                 </s-popup-menu>
 
-                <s-ripple class="menu-button">
+                <s-ripple class="menu-button" id="new-chat">
                     <svg viewBox="0 -960 960 960">
                         <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"></path>
                     </svg>
@@ -773,6 +777,35 @@
                     ws.close();
                 }
             });
+
+            // 新建对话功能
+            document.addEventListener('DOMContentLoaded', () => {
+                const newChatButton = document.getElementById('new-chat');
+                
+                newChatButton.addEventListener('click', async () => {
+                    await startNewChat();
+                });
+            });
+
+            // 新建对话函数
+            async function startNewChat() {
+                // 如果当前有对话内容且用户已登录，先保存到历史记录
+                if (currentUser && conversationHistory.length > 0) {
+                    await saveChatHistory();
+                }
+                
+                // 清空当前对话
+                output.innerHTML = '';
+                conversationHistory = [];
+                currentMessageId = null;
+                
+                // 如果正在处理中，停止处理
+                if (isProcessing) {
+                    await stopProcessing();
+                }
+                
+                console.log('✅ 已开始新对话');
+            }
 
             // 历史记录相关功能
             document.addEventListener('DOMContentLoaded', () => {
