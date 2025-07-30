@@ -22,6 +22,11 @@
 
         s-page {
             height: calc(100vh + 20px);
+            --color-accent: #40484c;
+        }
+
+        s-page[dark] {
+            --color-accent: #c0c8cc;
         }
 
         #output {
@@ -51,7 +56,6 @@
             width: 90%;
             max-width: 500px;
             height: 100px;
-            background-color: white;
             margin-bottom: 25px;
         }
 
@@ -67,7 +71,6 @@
             right: 20px;
             width: 180px;
             height: 55px;
-            background-color: #f6f8fa;
         }
 
         #user .menu-button {
@@ -83,7 +86,10 @@
 
         #user .menu-button svg {
             transform: scale(0.8);
-            fill: #40484C;
+        }
+
+        #user .menu-button svg {
+            transform: scale(0.8);
         }
 
         #user-avatar {
@@ -94,6 +100,10 @@
             transform: translateY(-50%);
             border-radius: 100%;
             margin-left: 18px;
+        }
+
+        #new-chat {
+            fill: var(--color-accent);
         }
 
         /* 基础Markdown样式 */
@@ -143,717 +153,764 @@
             justify-content: center;
             padding: 0 24px;
         }
+
+        .setting-container {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            padding: 8px 0;
+        }
     </style>
 </head>
 
 <body>
-    <s-page>
-            <s-dialog showed="false">
-                <div slot="headline">登录/注册</div>
-                <div class="dialog">
-                    <s-text-field class="text-field" label="请输入用户名">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" slot="start">
-                            <path
-                                d="M480-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM160-160v-112q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440q66 0 130 15.5T736-378q29 15 46.5 43.5T800-272v112H160Zm80-80h480v-32q0-11-5.5-20T700-306q-54-27-109-40.5T480-360q-56 0-111 13.5T260-306q-9 5-14.5 14t-5.5 20v32Zm240-320q33 0 56.5-23.5T560-640q0-33-23.5-56.5T480-720q-33 0-56.5 23.5T400-640q0 33 23.5 56.5T480-560Zm0-80Zm0 400Z">
-                            </path>
-                        </svg>
-                    </s-text-field>
-                    <s-text-field class="text-field" style="margin-top: 8px;" label="请输入密码" type="password">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" slot="start">
-                            <path
-                                d="M80-200v-80h800v80H80Zm46-242-52-30 34-60H40v-60h68l-34-58 52-30 34 58 34-58 52 30-34 58h68v60h-68l34 60-52 30-34-60-34 60Zm320 0-52-30 34-60h-68v-60h68l-34-58 52-30 34 58 34-58 52 30-34 58h68v60h-68l34 60-52 30-34-60-34 60Zm320 0-52-30 34-60h-68v-60h68l-34-58 52-30 34 58 34-58 52 30-34 58h68v60h-68l34 60-52 30-34-60-34 60Z">
-                            </path>
-                        </svg>
-                        <s-icon-button slot="end">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
-                                <path
-                                    d="M480-320q75 0 127.5-52.5T660-500q0-75-52.5-127.5T480-680q-75 0-127.5 52.5T300-500q0 75 52.5 127.5T480-320Zm0-72q-45 0-76.5-31.5T372-500q0-45 31.5-76.5T480-608q45 0 76.5 31.5T588-500q0 45-31.5 76.5T480-392Zm0 192q-146 0-266-81.5T40-500q54-137 174-218.5T480-800q146 0 266 81.5T920-500q-54 137-174 218.5T480-200Zm0-300Zm0 220q113 0 207.5-59.5T832-500q-50-101-144.5-160.5T480-720q-113 0-207.5 59.5T128-500q50 101 144.5 160.5T480-280Z">
-                                </path>
-                            </svg>
-                        </s-icon-button>
-                    </s-text-field>
-                    <s-button id="submit" style="border-radius: 4px;box-shadow: none;" onclick="login()">
-                        <s-circular-progress indeterminate="true" slot="start" id="progress"
-                            style="display: none;"></s-circular-progress> 登录
-                    </s-button>
-                    <s-button type="outlined" style="border-radius: 4px;">注册账号</s-button>
-                </div>
-            </s-dialog>
+    <s-page theme="light">
 
-            <s-card id="user">
-                <s-popup-menu id="user-avatar">
-                    <s-ripple style="border-radius: 100%;" slot="trigger"><s-avatar>US</s-avatar></s-ripple>
-                    <s-popup-menu-item id="signin-button">登录</s-popup-menu-item>
-                </s-popup-menu>
+        <s-snackbar>
+            <div slot="trigger"></div>
+            <p></p>
+            <s-button slot="action" type="text"> 关闭 </s-button>
+        </s-snackbar>
 
-                <s-ripple class="menu-button" id="new-chat">
-                    <svg viewBox="0 -960 960 960">
-                        <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"></path>
+        <s-dialog showed="false">
+            <div slot="headline">登录/注册</div>
+            <div class="dialog">
+                <s-text-field class="text-field" label="请输入用户名">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" slot="start">
+                        <path
+                            d="M480-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM160-160v-112q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440q66 0 130 15.5T736-378q29 15 46.5 43.5T800-272v112H160Zm80-80h480v-32q0-11-5.5-20T700-306q-54-27-109-40.5T480-360q-56 0-111 13.5T260-306q-9 5-14.5 14t-5.5 20v32Zm240-320q33 0 56.5-23.5T560-640q0-33-23.5-56.5T480-720q-33 0-56.5 23.5T400-640q0 33 23.5 56.5T480-560Zm0-80Zm0 400Z">
+                        </path>
                     </svg>
-                </s-ripple>
-
-                <s-popup class="menu-button">
-
-                    <s-icon-button slot="trigger">
-                        <svg viewBox="0 -960 960 960" style="transform: scale(1.4);">
+                </s-text-field>
+                <s-text-field class="text-field" style="margin-top: 8px;" label="请输入密码" type="password">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960" slot="start">
+                        <path
+                            d="M80-200v-80h800v80H80Zm46-242-52-30 34-60H40v-60h68l-34-58 52-30 34 58 34-58 52 30-34 58h68v60h-68l34 60-52 30-34-60-34 60Zm320 0-52-30 34-60h-68v-60h68l-34-58 52-30 34 58 34-58 52 30-34 58h68v60h-68l34 60-52 30-34-60-34 60Zm320 0-52-30 34-60h-68v-60h68l-34-58 52-30 34 58 34-58 52 30-34 58h68v60h-68l34 60-52 30-34-60-34 60Z">
+                        </path>
+                    </svg>
+                    <s-icon-button slot="end">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 -960 960 960">
                             <path
-                                d="M480-120q-138 0-240.5-91.5T122-440h82q14 104 92.5 172T480-200q117 0 198.5-81.5T760-480q0-117-81.5-198.5T480-760q-69 0-129 32t-101 88h110v80H120v-240h80v94q51-64 124.5-99T480-840q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-480q0 75-28.5 140.5t-77 114q-48.5 48.5-114 77T480-120Zm112-192L440-464v-216h80v184l128 128-56 56Z">
+                                d="M480-320q75 0 127.5-52.5T660-500q0-75-52.5-127.5T480-680q-75 0-127.5 52.5T300-500q0 75 52.5 127.5T480-320Zm0-72q-45 0-76.5-31.5T372-500q0-45 31.5-76.5T480-608q45 0 76.5 31.5T588-500q0 45-31.5 76.5T480-392Zm0 192q-146 0-266-81.5T40-500q54-137 174-218.5T480-800q146 0 266 81.5T920-500q-54 137-174 218.5T480-200Zm0-300Zm0 220q113 0 207.5-59.5T832-500q-50-101-144.5-160.5T480-720q-113 0-207.5 59.5T128-500q50 101 144.5 160.5T480-280Z">
                             </path>
                         </svg>
                     </s-icon-button>
+                </s-text-field>
+                <s-button id="submit" style="border-radius: 4px;box-shadow: none;" onclick="login()">
+                    <s-circular-progress indeterminate="true" slot="start" id="progress"
+                        style="display: none;"></s-circular-progress> 登录
+                </s-button>
+                <s-button type="outlined" style="border-radius: 4px;">注册账号</s-button>
+            </div>
+        </s-dialog>
 
-                    <div style="min-height: 280px; width: 256px; overflow-y: auto; padding: 8px;">
-                        <h3 style="margin: 8px 0; text-align: center;">历史对话记录</h3>
-                        <div id="history-list" style="display: flex; flex-direction: column; gap: 8px;">
-                            <div class="history-loading" style="text-align: center; padding: 16px;">
-                                加载中...
-                            </div>
-                        </div>
-                        <div id="history-empty" style="text-align: center; padding: 16px; display: none;">
-                            暂无历史记录
+        <s-card id="user">
+            <s-popup-menu id="user-avatar">
+                <s-ripple style="border-radius: 100%;" slot="trigger"><s-avatar></s-avatar></s-ripple>
+                <s-popup-menu-item id="signin-button">登录</s-popup-menu-item>
+            </s-popup-menu>
+
+            <s-ripple class="menu-button" id="new-chat">
+                <svg viewBox="0 -960 960 960">
+                    <path d="M440-440H200v-80h240v-240h80v240h240v80H520v240h-80v-240Z"></path>
+                </svg>
+            </s-ripple>
+
+            <s-popup class="menu-button">
+
+                <s-icon-button slot="trigger">
+                    <svg viewBox="0 -960 960 960" style="transform: scale(1.4);">
+                        <path
+                            d="M480-120q-138 0-240.5-91.5T122-440h82q14 104 92.5 172T480-200q117 0 198.5-81.5T760-480q0-117-81.5-198.5T480-760q-69 0-129 32t-101 88h110v80H120v-240h80v94q51-64 124.5-99T480-840q75 0 140.5 28.5t114 77q48.5 48.5 77 114T840-480q0 75-28.5 140.5t-77 114q-48.5 48.5-114 77T480-120Zm112-192L440-464v-216h80v184l128 128-56 56Z">
+                        </path>
+                    </svg>
+                </s-icon-button>
+
+                <div style="min-height: 280px; width: 256px; overflow-y: auto; padding: 8px;">
+                    <h3 style="margin: 8px 0; text-align: center;">历史对话记录</h3>
+                    <div id="history-list" style="display: flex; flex-direction: column; gap: 8px;">
+                        <div class="history-loading" style="text-align: center; padding: 16px;">
+                            加载中...
                         </div>
                     </div>
+                    <div id="history-empty" style="text-align: center; padding: 16px; display: none;">
+                        暂无历史记录
+                    </div>
+                </div>
 
-                </s-popup>
+            </s-popup>
 
 
-                <s-ripple class="menu-button">
-                    <svg viewBox="0 -960 960 960" style="transform: scale(0.78);">
+            <s-popup class="menu-button">
+                <s-icon-button slot="trigger">
+                    <svg viewBox="0 -960 960 960" style="transform: scale(1.25);">
                         <path
                             d="m370-80-16-128q-13-5-24.5-12T307-235l-119 50L78-375l103-78q-1-7-1-13.5v-27q0-6.5 1-13.5L78-585l110-190 119 50q11-8 23-15t24-12l16-128h220l16 128q13 5 24.5 12t22.5 15l119-50 110 190-103 78q1 7 1 13.5v27q0 6.5-2 13.5l103 78-110 190-118-50q-11 8-23 15t-24 12L590-80H370Zm70-80h79l14-106q31-8 57.5-23.5T639-327l99 41 39-68-86-65q5-14 7-29.5t2-31.5q0-16-2-31.5t-7-29.5l86-65-39-68-99 42q-22-23-48.5-38.5T533-694l-13-106h-79l-14 106q-31 8-57.5 23.5T321-633l-99-41-39 68 86 64q-5 15-7 30t-2 32q0 16 2 31t7 30l-86 65 39 68 99-42q22 23 48.5 38.5T427-266l13 106Zm42-180q58 0 99-41t41-99q0-58-41-99t-99-41q-59 0-99.5 41T342-480q0 58 40.5 99t99.5 41Zm-2-140Z">
                         </path>
                     </svg>
-                </s-ripple>
-
-            </s-card>
-
-            <div id="output"></div>
-            <div id="space"></div>
-
-
-            <s-text-field id="prompt_input" label="请输入Prompt" type="multiLine" style="min-height: 96px">
-                <s-icon-button class="prompt_button" id="send" slot="end">
-                    <svg viewBox="0 -960 960 960">
-                        <path
-                            d="M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z">
-                        </path>
-                    </svg>
                 </s-icon-button>
-            </s-text-field>
+                <div style="min-height: 40px; width: 180px; overflow-y: auto; padding: 8px;">
+                    <div class="setting-container">
+                        <s-icon name="dark_mode"></s-icon>
+                        <p style="margin: 0;">
+                            暗黑模式
+                        </p>
+                        <s-switch id="toggleTheme"></s-switch>
+                    </div>
+                </div>
+            </s-popup>
 
-        </s-page>
+        </s-card>
 
-        <script src="./node_modules/sober/dist/sober.min.js"></script>
-        <script>
-            const signinButton = document.getElementById('signin-button');
-            const dialog = document.querySelector('s-dialog');
-            const userAvatar = document.getElementById('user-avatar');
-            const registerButton = document.querySelector('s-button[type="outlined"]');
-            const loginButton = document.getElementById('submit');
-            const progressIndicator = document.getElementById('progress');
-            let currentUser = null;
+        <div id="output"></div>
+        <div id="space"></div>
 
-            // 检查会话状态
-            async function checkSession() {
-                try {
-                    const response = await fetch('/api/session');
-                    const data = await response.json();
-                    if (data.success && data.user) {
-                        currentUser = data.user;
-                        updateUIForLoggedInUser(data.user);
-                    } else {
-                        updateUIForLoggedOutUser();
-                    }
-                } catch (error) {
-                    console.error('检查会话失败:', error);
+
+        <s-text-field id="prompt_input" label="请输入Prompt" type="multiLine" style="min-height: 96px">
+            <s-icon-button class="prompt_button" id="send" slot="end">
+                <svg viewBox="0 -960 960 960">
+                    <path
+                        d="M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z">
+                    </path>
+                </svg>
+            </s-icon-button>
+        </s-text-field>
+
+    </s-page>
+
+    <script src="./node_modules/sober/dist/sober.min.js"></script>
+    <script>
+        const signinButton = document.getElementById('signin-button');
+        const dialog = document.querySelector('s-dialog');
+        const userAvatar = document.getElementById('user-avatar');
+        const registerButton = document.querySelector('s-button[type="outlined"]');
+        const loginButton = document.getElementById('submit');
+        const progressIndicator = document.getElementById('progress');
+        const darkModeSwitch = document.querySelector('s-switch');
+        const page = document.querySelector('s-page');
+        let currentUser = null;
+
+        function showSnackbar(message) {
+            const snackbar = document.querySelector('s-snackbar');
+            const triggerDiv = snackbar.querySelector('div[slot="trigger"]');
+            const messageP = snackbar.querySelector('p');
+            messageP.innerText = message;
+            // 模拟点击触发
+            triggerDiv.click();
+        }
+
+        darkModeSwitch.addEventListener('click', function () {
+            if (darkModeSwitch.checked) {
+                page.theme = 'dark';
+            } else {
+                page.theme = 'light';
+            }
+        });
+
+
+        // 检查会话状态
+        async function checkSession() {
+            try {
+                const response = await fetch('/api/session');
+                const data = await response.json();
+                if (data.success && data.user) {
+                    currentUser = data.user;
+                    updateUIForLoggedInUser(data.user);
+                } else {
                     updateUIForLoggedOutUser();
                 }
+            } catch (error) {
+                console.error('检查会话失败:', error);
+                updateUIForLoggedOutUser();
+            }
+        }
+
+        // 更新已登录用户的UI
+        function updateUIForLoggedInUser(user) {
+            const avatar = userAvatar.querySelector('s-avatar');
+            avatar.innerText = user.username.substring(0, 2).toUpperCase();
+
+            // 更新用户菜单
+            const userMenu = document.getElementById('signin-button');
+            userMenu.innerText = '登出';
+
+            console.log('用户已登录:', user.username);
+        }
+
+        // 更新未登录用户的UI
+        function updateUIForLoggedOutUser() {
+            const avatar = userAvatar.querySelector('s-avatar');
+            avatar.innerHTML = '<svg viewBox="0 -960 960 960"><path d="M480-480q-66 0-113-47t-47-113q0-66 47-113t113-47q66 0 113 47t47 113q0 66-47 113t-113 47ZM160-160v-112q0-34 17.5-62.5T224-378q62-31 126-46.5T480-440q66 0 130 15.5T736-378q29 15 46.5 43.5T800-272v112H160Zm80-80h480v-32q0-11-5.5-20T700-306q-54-27-109-40.5T480-360q-56 0-111 13.5T260-306q-9 5-14.5 14t-5.5 20v32Zm240-320q33 0 56.5-23.5T560-640q0-33-23.5-56.5T480-720q-33 0-56.5 23.5T400-640q0 33 23.5 56.5T480-560Zm0-80Zm0 400Z"></path></svg>';
+
+            // 更新用户菜单
+            const userMenu = document.getElementById('signin-button');
+            userMenu.innerText = '登录';
+
+            currentUser = null;
+            console.log('用户未登录');
+        }
+
+        // 处理登录
+        async function login() {
+            const usernameField = document.querySelector('s-text-field[label="请输入用户名"]');
+            const passwordField = document.querySelector('s-text-field[label="请输入密码"]');
+
+            const username = usernameField.value;
+            const password = passwordField.value;
+
+            if (!username || !password) {
+                showSnackbar('请输入用户名和密码！');
+                return;
             }
 
-            // 更新已登录用户的UI
-            function updateUIForLoggedInUser(user) {
-                const avatar = userAvatar.querySelector('s-avatar');
-                avatar.innerText = user.username.substring(0, 2).toUpperCase();
-                
-                // 更新用户菜单
-                const userMenu = document.getElementById('signin-button');
-                userMenu.innerText = '登出';
-                
-                console.log('用户已登录:', user.username);
-            }
+            try {
+                progressIndicator.style.display = 'inline-block';
+                loginButton.disabled = true;
 
-            // 更新未登录用户的UI
-            function updateUIForLoggedOutUser() {
-                const avatar = userAvatar.querySelector('s-avatar');
-                avatar.innerText = 'US';
-                
-                // 更新用户菜单
-                const userMenu = document.getElementById('signin-button');
-                userMenu.innerText = '登录';
-                
-                currentUser = null;
-                console.log('用户未登录');
-            }
+                const response = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username,
+                        password
+                    })
+                });
 
-            // 处理登录
-            async function login() {
-                const usernameField = document.querySelector('s-text-field[label="请输入用户名"]');
-                const passwordField = document.querySelector('s-text-field[label="请输入密码"]');
-                
-                const username = usernameField.value;
-                const password = passwordField.value;
-                
-                if (!username || !password) {
-                    alert('请输入用户名和密码');
-                    return;
-                }
-                
-                try {
-                    progressIndicator.style.display = 'inline-block';
-                    loginButton.disabled = true;
-                    
-                    const response = await fetch('/api/login', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            username,
-                            password
-                        })
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        dialog.showed = false;
-                        currentUser = data.user;
-                        updateUIForLoggedInUser(data.user);
-                        passwordField.value = '';
-                    } else {
-                        alert(data.error || '登录失败');
-                    }
-                } catch (error) {
-                    console.error('登录请求失败:', error);
-                    alert('登录请求失败，请稍后重试');
-                } finally {
-                    progressIndicator.style.display = 'none';
-                    loginButton.disabled = false;
-                }
-            }
+                const data = await response.json();
 
-            // 处理注册
-            async function register() {
-                const usernameField = document.querySelector('s-text-field[label="请输入用户名"]');
-                const passwordField = document.querySelector('s-text-field[label="请输入密码"]');
-                
-                const username = usernameField.value;
-                const password = passwordField.value;
-                
-                if (!username || !password) {
-                    alert('请输入用户名和密码');
-                    return;
-                }
-                
-                try {
-                    progressIndicator.style.display = 'inline-block';
-                    registerButton.disabled = true;
-                    
-                    const response = await fetch('/api/register', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            username,
-                            password
-                        })
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        alert('注册成功，请登录');
-                        // 保持对话框打开，让用户可以直接登录
-                    } else {
-                        alert(data.error || '注册失败');
-                    }
-                } catch (error) {
-                    console.error('注册请求失败:', error);
-                    alert('注册请求失败，请稍后重试');
-                } finally {
-                    progressIndicator.style.display = 'none';
-                    registerButton.disabled = false;
-                }
-            }
-
-            // 处理登出
-            async function logout() {
-                try {
-                    const response = await fetch('/api/logout', {
-                        method: 'POST'
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        updateUIForLoggedOutUser();
-                    }
-                } catch (error) {
-                    console.error('登出请求失败:', error);
-                }
-            }
-
-            // 事件监听器
-            window.addEventListener('load', checkSession);
-            
-            signinButton.addEventListener('click', function() {
-                if (currentUser) {
-                    // 已登录，执行登出
-                    logout();
+                if (data.success) {
+                    dialog.showed = false;
+                    currentUser = data.user;
+                    updateUIForLoggedInUser(data.user);
+                    passwordField.value = '';
                 } else {
-                    // 未登录，显示登录对话框
-                    dialog.showed = true;
+                    showSnackbar(data.error || '登录失败');
                 }
-            });
+            } catch (error) {
+                console.error('登录请求失败:', error);
+                showSnackbar('登录请求失败，请稍后重试');
+            } finally {
+                progressIndicator.style.display = 'none';
+                loginButton.disabled = false;
+            }
+        }
 
-            loginButton.addEventListener('click', login);
-            registerButton.addEventListener('click', register);
-        </script>
-        <script>
-            const output = document.getElementById('output');
-            const promptInput = document.getElementById('prompt_input');
-            const submitButton = document.querySelector('#send');
+        // 处理注册
+        async function register() {
+            const usernameField = document.querySelector('s-text-field[label="请输入用户名"]');
+            const passwordField = document.querySelector('s-text-field[label="请输入密码"]');
 
-            // WebSocket连接和状态管理
-            let ws = null;
-            let isConnected = false;
-            let isProcessing = false;
-            let conversationHistory = [];
-            let currentMessageId = null;
+            const username = usernameField.value;
+            const password = passwordField.value;
 
-            // 修正SVG图标
-            const sendIcon = `<svg viewBox="0 -960 960 960"><path d="M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z"></path></svg>`;
-            const stopIcon = `<svg viewBox="0 -960 960 960"><path d="M520-200v-560h240v560H520Zm-320 0v-560h240v560H200Z"></path></svg>`;
-
-            // 配置 marked.js
-            marked.setOptions({
-                highlight: function (code, lang) {
-                    if (lang && hljs.getLanguage(lang)) {
-                        try {
-                            return hljs.highlight(code, { language: lang }).value;
-                        } catch (err) { }
-                    }
-                    return hljs.highlightAuto(code).value;
-                },
-                langPrefix: 'hljs language-',
-                breaks: true,
-                gfm: true
-            });
-
-            // 初始化WebSocket连接
-            function initWebSocket() {
-                const wsUrl = `ws://${window.location.host}`;
-                console.log('🔌 连接WebSocket:', wsUrl);
-
-                ws = new WebSocket(wsUrl);
-
-                ws.onopen = function (event) {
-                    console.log('✅ WebSocket连接成功');
-                    isConnected = true;
-                };
-
-                ws.onmessage = function (event) {
-                    console.log('🔔 原始WebSocket消息:', event.data);
-                    try {
-                        const message = JSON.parse(event.data);
-                        handleWebSocketMessage(message);
-                    } catch (error) {
-                        console.error('❌ 消息解析失败:', error, '原始数据:', event.data);
-                    }
-                };
-
-                ws.onclose = function (event) {
-                    console.log('❌ WebSocket连接关闭', event.code, event.reason);
-                    isConnected = false;
-                    isProcessing = false;
-
-                    // 5秒后尝试重连
-                    setTimeout(initWebSocket, 5000);
-                };
-
-                ws.onerror = function (error) {
-                    console.error('WebSocket错误:', error);
-                };
+            if (!username || !password) {
+                showSnackbar('请输入用户名和密码');
+                return;
             }
 
-            // 处理WebSocket消息
-            function handleWebSocketMessage(message) {
-                console.log('📨 收到消息类型:', message.type);
-                console.log('📊 完整消息内容:', message);
+            try {
+                progressIndicator.style.display = 'inline-block';
+                registerButton.disabled = true;
 
-                switch (message.type) {
-                    case 'processing_start':
-                        console.log('🚀 开始处理...');
-                        isProcessing = true;
-                        setProcessingState(true);
-                        currentMessageId = `msg-${Date.now()}`;
-                        const startDiv = `<div id="${currentMessageId}"><p><strong>AI：</strong>正在处理...</p></div>`;
-                        output.innerHTML += startDiv;
-                        console.log('✅ 已添加处理容器:', currentMessageId);
-                        break;
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        username,
+                        password
+                    })
+                });
 
-                    case 'coordination_progress':
-                        console.log('🔄 协调进度:', message.message, message.progress + '%');
-                        const progressContainer = document.getElementById(currentMessageId);
-                        if (progressContainer) {
-                            progressContainer.innerHTML = `<p><strong>AI：</strong>🚀 ${message.stage}/6 ${message.message}</p>`;
-                            console.log('✅ 已更新进度显示');
+                const data = await response.json();
+
+                if (data.success) {
+                    showSnackbar('注册成功，请登录');
+                    // 保持对话框打开，让用户可以直接登录
+                } else {
+                    showSnackbar(data.error || '注册失败');
+                }
+            } catch (error) {
+                console.error('注册请求失败:', error);
+                showSnackbar('注册请求失败，请稍后重试');
+            } finally {
+                progressIndicator.style.display = 'none';
+                registerButton.disabled = false;
+            }
+        }
+
+        // 处理登出
+        async function logout() {
+            try {
+                const response = await fetch('/api/logout', {
+                    method: 'POST'
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    updateUIForLoggedOutUser();
+                }
+            } catch (error) {
+                console.error('登出请求失败:', error);
+            }
+        }
+
+        // 事件监听器
+        window.addEventListener('load', checkSession);
+
+        signinButton.addEventListener('click', function () {
+            if (currentUser) {
+                // 已登录，执行登出
+                logout();
+            } else {
+                // 未登录，显示登录对话框
+                dialog.showed = true;
+            }
+        });
+
+        loginButton.addEventListener('click', login);
+        registerButton.addEventListener('click', register);
+    </script>
+    <script>
+        const output = document.getElementById('output');
+        const promptInput = document.getElementById('prompt_input');
+        const submitButton = document.querySelector('#send');
+
+        // WebSocket连接和状态管理
+        let ws = null;
+        let isConnected = false;
+        let isProcessing = false;
+        let conversationHistory = [];
+        let currentMessageId = null;
+
+        // 修正SVG图标
+        const sendIcon = `<svg viewBox="0 -960 960 960"><path d="M120-160v-640l760 320-760 320Zm80-120 474-200-474-200v140l240 60-240 60v140Zm0 0v-400 400Z"></path></svg>`;
+        const stopIcon = `<svg viewBox="0 -960 960 960"><path d="M520-200v-560h240v560H520Zm-320 0v-560h240v560H200Z"></path></svg>`;
+
+        // 配置 marked.js
+        marked.setOptions({
+            highlight: function (code, lang) {
+                if (lang && hljs.getLanguage(lang)) {
+                    try {
+                        return hljs.highlight(code, { language: lang }).value;
+                    } catch (err) { }
+                }
+                return hljs.highlightAuto(code).value;
+            },
+            langPrefix: 'hljs language-',
+            breaks: true,
+            gfm: true
+        });
+
+        // 初始化WebSocket连接
+        function initWebSocket() {
+            const wsUrl = `ws://${window.location.host}`;
+            console.log('🔌 连接WebSocket:', wsUrl);
+
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = function (event) {
+                console.log('✅ WebSocket连接成功');
+                isConnected = true;
+            };
+
+            ws.onmessage = function (event) {
+                console.log('🔔 原始WebSocket消息:', event.data);
+                try {
+                    const message = JSON.parse(event.data);
+                    handleWebSocketMessage(message);
+                } catch (error) {
+                    console.error('❌ 消息解析失败:', error, '原始数据:', event.data);
+                }
+            };
+
+            ws.onclose = function (event) {
+                console.log('❌ WebSocket连接关闭', event.code, event.reason);
+                isConnected = false;
+                isProcessing = false;
+
+                // 5秒后尝试重连
+                setTimeout(initWebSocket, 5000);
+            };
+
+            ws.onerror = function (error) {
+                console.error('WebSocket错误:', error);
+            };
+        }
+
+        // 处理WebSocket消息
+        function handleWebSocketMessage(message) {
+            console.log('📨 收到消息类型:', message.type);
+            console.log('📊 完整消息内容:', message);
+
+            switch (message.type) {
+                case 'processing_start':
+                    console.log('🚀 开始处理...');
+                    isProcessing = true;
+                    setProcessingState(true);
+                    currentMessageId = `msg-${Date.now()}`;
+                    const startDiv = `<div id="${currentMessageId}"><p><strong>AI：</strong>正在处理...</p></div>`;
+                    output.innerHTML += startDiv;
+                    console.log('✅ 已添加处理容器:', currentMessageId);
+                    break;
+
+                case 'coordination_progress':
+                    console.log('🔄 协调进度:', message.message, message.progress + '%');
+                    const progressContainer = document.getElementById(currentMessageId);
+                    if (progressContainer) {
+                        progressContainer.innerHTML = `<p><strong>AI：</strong>🚀 ${message.stage}/6 ${message.message}</p>`;
+                        console.log('✅ 已更新进度显示');
+                    } else {
+                        console.warn('⚠️ 找不到进度容器:', currentMessageId);
+                    }
+                    break;
+
+                case 'stream_start':
+                    console.log('🟢 开始流式传输');
+                    const startContainer = document.getElementById(currentMessageId);
+                    if (startContainer) {
+                        startContainer.innerHTML = `<p><strong>AI：</strong></p><div class="markdown-content">开始接收内容...</div>`;
+                        console.log('✅ 已准备内容容器');
+                    } else {
+                        console.warn('⚠️ 找不到开始容器:', currentMessageId);
+                    }
+                    break;
+
+                case 'stream_chunk':
+                    console.log('📦 收到数据块，内容长度:', message.fullContent ? message.fullContent.length : 0);
+                    console.log('📋 数据块内容预览:', message.fullContent ? message.fullContent.substring(0, 100) + '...' : '无内容');
+
+                    const container = document.getElementById(currentMessageId);
+                    if (container) {
+                        console.log('✅ 找到容器:', currentMessageId);
+                        if (message.fullContent) {
+                            let contentDiv = container.querySelector('.markdown-content');
+                            if (!contentDiv) {
+                                console.log('⚠️ 创建新的内容容器');
+                                contentDiv = document.createElement('div');
+                                contentDiv.className = 'markdown-content';
+                                container.innerHTML = '<p><strong>AI：</strong></p>';
+                                container.appendChild(contentDiv);
+                            }
+
+                            try {
+                                contentDiv.innerHTML = parseMarkdown(message.fullContent);
+                                console.log('✅ 已更新页面内容，当前长度:', contentDiv.innerHTML.length);
+                            } catch (parseError) {
+                                console.error('❌ Markdown解析失败:', parseError);
+                                contentDiv.textContent = message.fullContent;
+                            }
                         } else {
-                            console.warn('⚠️ 找不到进度容器:', currentMessageId);
+                            console.warn('⚠️ 数据块没有fullContent');
                         }
-                        break;
+                    } else {
+                        console.error('❌ 找不到容器:', currentMessageId, '当前所有容器:', document.querySelectorAll('[id^="msg-"]'));
+                    }
+                    break;
 
-                    case 'stream_start':
-                        console.log('🟢 开始流式传输');
-                        const startContainer = document.getElementById(currentMessageId);
-                        if (startContainer) {
-                            startContainer.innerHTML = `<p><strong>AI：</strong></p><div class="markdown-content">开始接收内容...</div>`;
-                            console.log('✅ 已准备内容容器');
-                        } else {
-                            console.warn('⚠️ 找不到开始容器:', currentMessageId);
-                        }
-                        break;
-
-                    case 'stream_chunk':
-                        console.log('📦 收到数据块，内容长度:', message.fullContent ? message.fullContent.length : 0);
-                        console.log('📋 数据块内容预览:', message.fullContent ? message.fullContent.substring(0, 100) + '...' : '无内容');
-
+                case 'stream_complete':
+                    console.log('✅ 流式传输完成，最终内容长度:', message.fullContent ? message.fullContent.length : 0);
+                    if (currentMessageId) {
                         const container = document.getElementById(currentMessageId);
                         if (container) {
-                            console.log('✅ 找到容器:', currentMessageId);
-                            if (message.fullContent) {
-                                let contentDiv = container.querySelector('.markdown-content');
-                                if (!contentDiv) {
-                                    console.log('⚠️ 创建新的内容容器');
-                                    contentDiv = document.createElement('div');
-                                    contentDiv.className = 'markdown-content';
-                                    container.innerHTML = '<p><strong>AI：</strong></p>';
-                                    container.appendChild(contentDiv);
-                                }
+                            const finalContent = message.fullContent || message.content || '';
+                            console.log('📝 最终内容预览:', finalContent.substring(0, 200) + '...');
 
+                            let contentDiv = container.querySelector('.markdown-content');
+                            if (!contentDiv) {
+                                contentDiv = document.createElement('div');
+                                contentDiv.className = 'markdown-content';
+                                container.innerHTML = '<p><strong>AI：</strong></p>';
+                                container.appendChild(contentDiv);
+                            }
+
+                            if (finalContent) {
                                 try {
-                                    contentDiv.innerHTML = parseMarkdown(message.fullContent);
-                                    console.log('✅ 已更新页面内容，当前长度:', contentDiv.innerHTML.length);
+                                    contentDiv.innerHTML = parseMarkdown(finalContent);
+                                    conversationHistory.push({ role: 'assistant', content: finalContent });
+                                    console.log('✅ 已保存到历史记录，当前历史长度:', conversationHistory.length);
                                 } catch (parseError) {
-                                    console.error('❌ Markdown解析失败:', parseError);
-                                    contentDiv.textContent = message.fullContent;
+                                    console.error('❌ 最终内容解析失败:', parseError);
+                                    contentDiv.textContent = finalContent;
                                 }
                             } else {
-                                console.warn('⚠️ 数据块没有fullContent');
+                                console.warn('⚠️ 没有最终内容');
+                                contentDiv.innerHTML = '<p><em>未收到内容</em></p>';
                             }
                         } else {
-                            console.error('❌ 找不到容器:', currentMessageId, '当前所有容器:', document.querySelectorAll('[id^="msg-"]'));
+                            console.error('❌ 完成时找不到容器:', currentMessageId);
                         }
-                        break;
-
-                    case 'stream_complete':
-                        console.log('✅ 流式传输完成，最终内容长度:', message.fullContent ? message.fullContent.length : 0);
-                        if (currentMessageId) {
-                            const container = document.getElementById(currentMessageId);
-                            if (container) {
-                                const finalContent = message.fullContent || message.content || '';
-                                console.log('📝 最终内容预览:', finalContent.substring(0, 200) + '...');
-
-                                let contentDiv = container.querySelector('.markdown-content');
-                                if (!contentDiv) {
-                                    contentDiv = document.createElement('div');
-                                    contentDiv.className = 'markdown-content';
-                                    container.innerHTML = '<p><strong>AI：</strong></p>';
-                                    container.appendChild(contentDiv);
-                                }
-
-                                if (finalContent) {
-                                    try {
-                                        contentDiv.innerHTML = parseMarkdown(finalContent);
-                                        conversationHistory.push({ role: 'assistant', content: finalContent });
-                                        console.log('✅ 已保存到历史记录，当前历史长度:', conversationHistory.length);
-                                    } catch (parseError) {
-                                        console.error('❌ 最终内容解析失败:', parseError);
-                                        contentDiv.textContent = finalContent;
-                                    }
-                                } else {
-                                    console.warn('⚠️ 没有最终内容');
-                                    contentDiv.innerHTML = '<p><em>未收到内容</em></p>';
-                                }
-                            } else {
-                                console.error('❌ 完成时找不到容器:', currentMessageId);
-                            }
-                        }
-                        isProcessing = false;
-                        setProcessingState(false);
-                        break;
-
-                    case 'error':
-                        console.error('❌ 收到错误:', message.message);
-                        isProcessing = false;
-                        setProcessingState(false);
-                        output.innerHTML += `<p><strong>错误:</strong> ${message.message}</p>`;
-                        break;
-
-                    default:
-                        console.log('❓ 未知消息类型:', message.type, message);
-                }
-
-                output.scrollTop = output.scrollHeight;
-            }
-
-            // 监听按钮点击事件
-            submitButton.addEventListener('click', async (event) => {
-                event.preventDefault();
-
-                if (isProcessing) {
-                    await stopProcessing();
-                } else {
-                    await sendPromptWebSocket();
-                }
-            });
-
-            // 监听表单提交事件
-            promptInput.addEventListener('submit', async (event) => {
-                event.preventDefault();
-
-                if (!isProcessing) {
-                    await sendPromptWebSocket();
-                }
-            });
-
-            // 通过WebSocket发送消息
-            async function sendPromptWebSocket() {
-                const prompt = promptInput.value.trim();
-
-                if (!prompt) {
-                    alert('请输入内容');
-                    return;
-                }
-
-                if (!currentUser) {
-                    alert('请先登录后再使用AI功能。');
-                    dialog.showed = true; // 显示登录对话框
-                    return;
-                }
-
-                if (!isConnected) {
-                    alert('WebSocket未连接，请等待连接恢复');
-                    return;
-                }
-
-                if (isProcessing) {
-                    alert('AI正在处理中，请稍候');
-                    return;
-                }
-
-                // 显示用户输入
-                output.innerHTML += `<p><strong>用户:</strong> ${prompt}</p>`;
-
-                // 添加用户消息到历史记录
-                conversationHistory.push({
-                    role: 'user',
-                    content: prompt
-                });
-
-                // 更精确的意图识别
-                const lowerPrompt = prompt.toLowerCase();
-
-                // 首先检测文字创作需求
-                const isWritingRequest = /写.*?(小说|故事|文章|散文|诗歌|剧本|日记|传记|报告|论文|说明|介绍|分析|评论|总结)/.test(lowerPrompt) ||
-                    /创作.*?(小说|故事|文章|散文|诗歌|剧本)/.test(lowerPrompt) ||
-                    /^(小说|故事|文章|散文|诗歌|剧本|日记|传记|报告|论文|说明|介绍|分析|评论|总结)/.test(lowerPrompt);
-
-                // 检测代码开发需求
-                const isCodeRequest = /写|生成|创建|制作.*?(网页|网站|页面|代码|html|css|js|程序|应用|主页|界面|布局|系统)/.test(lowerPrompt) ||
-                    /开发|设计|实现.*?(页面|网站|网页|应用|系统)/.test(lowerPrompt);
-
-                // 明确的否定
-                const explicitNoCode = /不要.*代码|不写.*代码|不需要.*代码|只要.*文字|只需要.*文字|纯文字说明/.test(lowerPrompt);
-
-                // 优先级：写作需求 > 明确不要代码 > 代码需求
-                let useCoordinator;
-                if (isWritingRequest || explicitNoCode) {
-                    useCoordinator = true;  // 文字创作也使用协调器，但会分配给写作AI
-                    console.log('📝 识别为文字创作需求，使用写作专家AI');
-                } else if (isCodeRequest) {
-                    useCoordinator = true;  // 代码开发使用协调器，分配给代码AI
-                    console.log('💻 识别为代码开发需求，使用代码专家AI');
-                } else {
-                    useCoordinator = false; // 普通问答不使用协调器
-                    console.log('💬 识别为普通问答，使用基础AI');
-                }
-
-                console.log(`🤖 智能判断: 写作需求=${isWritingRequest}, 代码需求=${isCodeRequest}, 明确不要代码=${explicitNoCode}, 使用协调器=${useCoordinator}`);
-
-                // 通过WebSocket发送请求
-                const message = {
-                    prompt: prompt,
-                    history: conversationHistory,
-                    useCoordinator: useCoordinator
-                };
-
-                console.log('📤 发送消息到服务器:', message);
-                ws.send(JSON.stringify(message));
-
-                promptInput.value = '';
-                output.scrollTop = output.scrollHeight;
-            }
-
-            // 停止处理
-            async function stopProcessing() {
-                if (isConnected && ws) {
-                    ws.send(JSON.stringify({ type: 'stop_task' }));
-                }
-
-                // 立即更新UI状态
-                isProcessing = false;
-                setProcessingState(false);
-
-                // 立即在UI上显示任务已停止
-                const container = document.getElementById(currentMessageId);
-                if (container) {
-                    container.innerHTML += '<p><strong>系统:</strong> 任务已停止。</p>';
-                }
-            }
-
-            function setProcessingState(processing) {
-                isProcessing = processing;
-                if (processing) {
-                    submitButton.innerHTML = stopIcon;
-                    submitButton.setAttribute('aria-label', '停止处理');
-                } else {
-                    submitButton.innerHTML = sendIcon;
-                    submitButton.setAttribute('aria-label', '发送消息');
-                }
-            }
-
-            /**
-             * 使用 marked.js 解析 Markdown
-             */
-            function parseMarkdown(markdown) {
-                if (!markdown || typeof markdown !== 'string') {
-                    return markdown;
-                }
-
-                try {
-                    // 1. 使用 marked.js 解析 Markdown
-                    let html = marked.parse(markdown);
-
-                    // 2. 使用 DOMPurify 清理HTML，防止XSS攻击
-                    html = DOMPurify.sanitize(html);
-
-                    return html;
-                } catch (error) {
-                    console.error('Markdown 解析错误:', error);
-                    return markdown;
-                }
-            }
-
-            // 心跳检测
-            function startHeartbeat() {
-                setInterval(() => {
-                    if (isConnected && ws && ws.readyState === WebSocket.OPEN) {
-                        ws.send(JSON.stringify({ type: 'ping' }));
                     }
-                }, 30000); // 30秒心跳
+                    isProcessing = false;
+                    setProcessingState(false);
+                    break;
+
+                case 'error':
+                    console.error('❌ 收到错误:', message.message);
+                    isProcessing = false;
+                    setProcessingState(false);
+                    output.innerHTML += `<p><strong>错误:</strong> ${message.message}</p>`;
+                    break;
+
+                default:
+                    console.log('❓ 未知消息类型:', message.type, message);
             }
 
-            // 页面加载时初始化WebSocket
-            window.addEventListener('load', () => {
-                initWebSocket();
-                startHeartbeat();
-            });
+            output.scrollTop = output.scrollHeight;
+        }
 
-            // 页面卸载时关闭连接
-            window.addEventListener('beforeunload', () => {
-                if (ws) {
-                    ws.close();
-                }
-            });
+        // 监听按钮点击事件
+        submitButton.addEventListener('click', async (event) => {
+            event.preventDefault();
 
-            // 新建对话功能
-            document.addEventListener('DOMContentLoaded', () => {
-                const newChatButton = document.getElementById('new-chat');
-                
-                newChatButton.addEventListener('click', async () => {
-                    await startNewChat();
-                });
-            });
+            if (isProcessing) {
+                await stopProcessing();
+            } else {
+                await sendPromptWebSocket();
+            }
+        });
 
-            // 新建对话函数
-            async function startNewChat() {
-                // 如果当前有对话内容且用户已登录，先保存到历史记录
-                if (currentUser && conversationHistory.length > 0) {
-                    await saveChatHistory();
-                }
-                
-                // 清空当前对话
-                output.innerHTML = '';
-                conversationHistory = [];
-                currentMessageId = null;
-                
-                // 如果正在处理中，停止处理
-                if (isProcessing) {
-                    await stopProcessing();
-                }
-                
-                console.log('✅ 已开始新对话');
+        // 监听表单提交事件
+        promptInput.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            if (!isProcessing) {
+                await sendPromptWebSocket();
+            }
+        });
+
+        // 通过WebSocket发送消息
+        async function sendPromptWebSocket() {
+            const prompt = promptInput.value.trim();
+
+            if (!prompt) {
+                showSnackbar('请输入内容');
+                return;
             }
 
-            // 历史记录相关功能
-            document.addEventListener('DOMContentLoaded', () => {
-                const historyPopup = document.querySelector('s-popup.menu-button');
-                const historyTrigger = historyPopup.querySelector('[slot="trigger"]');
-                
-                // 点击历史记录按钮时加载历史记录
-                historyTrigger.addEventListener('click', () => {
-                    if (currentUser) {
-                        loadChatHistory();
-                    } else {
-                        document.getElementById('history-list').innerHTML = `
+            if (!currentUser) {
+                showSnackbar('请先登录后再使用AI功能。');
+                dialog.showed = true; // 显示登录对话框
+                return;
+            }
+
+            if (!isConnected) {
+                showSnackbar('WebSocket未连接，请等待连接恢复');
+                return;
+            }
+
+            if (isProcessing) {
+                showSnackbar('AI正在处理中，请稍候');
+                return;
+            }
+
+            // 显示用户输入
+            output.innerHTML += `<p><strong>用户:</strong> ${prompt}</p>`;
+
+            // 添加用户消息到历史记录
+            conversationHistory.push({
+                role: 'user',
+                content: prompt
+            });
+
+            // 更精确的意图识别
+            const lowerPrompt = prompt.toLowerCase();
+
+            // 首先检测文字创作需求
+            const isWritingRequest = /写.*?(小说|故事|文章|散文|诗歌|剧本|日记|传记|报告|论文|说明|介绍|分析|评论|总结)/.test(lowerPrompt) ||
+                /创作.*?(小说|故事|文章|散文|诗歌|剧本)/.test(lowerPrompt) ||
+                /^(小说|故事|文章|散文|诗歌|剧本|日记|传记|报告|论文|说明|介绍|分析|评论|总结)/.test(lowerPrompt);
+
+            // 检测代码开发需求
+            const isCodeRequest = /写|生成|创建|制作.*?(网页|网站|页面|代码|html|css|js|程序|应用|主页|界面|布局|系统)/.test(lowerPrompt) ||
+                /开发|设计|实现.*?(页面|网站|网页|应用|系统)/.test(lowerPrompt);
+
+            // 明确的否定
+            const explicitNoCode = /不要.*代码|不写.*代码|不需要.*代码|只要.*文字|只需要.*文字|纯文字说明/.test(lowerPrompt);
+
+            // 优先级：写作需求 > 明确不要代码 > 代码需求
+            let useCoordinator;
+            if (isWritingRequest || explicitNoCode) {
+                useCoordinator = true;  // 文字创作也使用协调器，但会分配给写作AI
+                console.log('📝 识别为文字创作需求，使用写作专家AI');
+            } else if (isCodeRequest) {
+                useCoordinator = true;  // 代码开发使用协调器，分配给代码AI
+                console.log('💻 识别为代码开发需求，使用代码专家AI');
+            } else {
+                useCoordinator = false; // 普通问答不使用协调器
+                console.log('💬 识别为普通问答，使用基础AI');
+            }
+
+            console.log(`🤖 智能判断: 写作需求=${isWritingRequest}, 代码需求=${isCodeRequest}, 明确不要代码=${explicitNoCode}, 使用协调器=${useCoordinator}`);
+
+            // 通过WebSocket发送请求
+            const message = {
+                prompt: prompt,
+                history: conversationHistory,
+                useCoordinator: useCoordinator
+            };
+
+            console.log('📤 发送消息到服务器:', message);
+            ws.send(JSON.stringify(message));
+
+            promptInput.value = '';
+            output.scrollTop = output.scrollHeight;
+        }
+
+        // 停止处理
+        async function stopProcessing() {
+            if (isConnected && ws) {
+                ws.send(JSON.stringify({ type: 'stop_task' }));
+            }
+
+            // 立即更新UI状态
+            isProcessing = false;
+            setProcessingState(false);
+
+            // 立即在UI上显示任务已停止
+            const container = document.getElementById(currentMessageId);
+            if (container) {
+                container.innerHTML += '<p><strong>系统:</strong> 任务已停止。</p>';
+            }
+        }
+
+        function setProcessingState(processing) {
+            isProcessing = processing;
+            if (processing) {
+                submitButton.innerHTML = stopIcon;
+                submitButton.setAttribute('aria-label', '停止处理');
+            } else {
+                submitButton.innerHTML = sendIcon;
+                submitButton.setAttribute('aria-label', '发送消息');
+            }
+        }
+
+        /**
+         * 使用 marked.js 解析 Markdown
+         */
+        function parseMarkdown(markdown) {
+            if (!markdown || typeof markdown !== 'string') {
+                return markdown;
+            }
+
+            try {
+                // 1. 使用 marked.js 解析 Markdown
+                let html = marked.parse(markdown);
+
+                // 2. 使用 DOMPurify 清理HTML，防止XSS攻击
+                html = DOMPurify.sanitize(html);
+
+                return html;
+            } catch (error) {
+                console.error('Markdown 解析错误:', error);
+                return markdown;
+            }
+        }
+
+        // 心跳检测
+        function startHeartbeat() {
+            setInterval(() => {
+                if (isConnected && ws && ws.readyState === WebSocket.OPEN) {
+                    ws.send(JSON.stringify({ type: 'ping' }));
+                }
+            }, 30000); // 30秒心跳
+        }
+
+        // 页面加载时初始化WebSocket
+        window.addEventListener('load', () => {
+            initWebSocket();
+            startHeartbeat();
+        });
+
+        // 页面卸载时关闭连接
+        window.addEventListener('beforeunload', () => {
+            if (ws) {
+                ws.close();
+            }
+        });
+
+        // 新建对话功能
+        document.addEventListener('DOMContentLoaded', () => {
+            const newChatButton = document.getElementById('new-chat');
+
+            newChatButton.addEventListener('click', async () => {
+                await startNewChat();
+            });
+        });
+
+        // 新建对话函数
+        async function startNewChat() {
+            // 如果当前有对话内容且用户已登录，先保存到历史记录
+            if (currentUser && conversationHistory.length > 0) {
+                await saveChatHistory();
+            }
+
+            // 清空当前对话
+            output.innerHTML = '';
+            conversationHistory = [];
+            currentMessageId = null;
+
+            // 如果正在处理中，停止处理
+            if (isProcessing) {
+                await stopProcessing();
+            }
+
+            console.log('✅ 已开始新对话');
+        }
+
+        // 历史记录相关功能
+        document.addEventListener('DOMContentLoaded', () => {
+            const historyPopup = document.querySelector('s-popup.menu-button');
+            const historyTrigger = historyPopup.querySelector('[slot="trigger"]');
+
+            // 点击历史记录按钮时加载历史记录
+            historyTrigger.addEventListener('click', () => {
+                if (currentUser) {
+                    loadChatHistory();
+                } else {
+                    document.getElementById('history-list').innerHTML = `
                             <div style="text-align: center; padding: 16px;">
                                 请先登录以查看历史记录
                             </div>
                         `;
-                    }
-                });
+                }
             });
+        });
 
-            // 加载聊天历史记录
-            async function loadChatHistory() {
-                const historyList = document.getElementById('history-list');
-                const historyEmpty = document.getElementById('history-empty');
-                
-                historyList.innerHTML = `
+        // 加载聊天历史记录
+        async function loadChatHistory() {
+            const historyList = document.getElementById('history-list');
+            const historyEmpty = document.getElementById('history-empty');
+
+            historyList.innerHTML = `
                     <div class="history-loading" style="text-align: center; padding: 16px;">
                         加载中...
                     </div>
                 `;
-                historyEmpty.style.display = 'none';
-                
-                try {
-                    const response = await fetch('/api/ai/history');
-                    const data = await response.json();
-                    
-                    if (data.success) {
-                        if (data.history && data.history.length > 0) {
-                            historyList.innerHTML = '';
-                            
-                            data.history.forEach(history => {
-                                const date = new Date(history.created_at);
-                                const formattedDate = `${date.getFullYear()}-${(date.getMonth()+1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
-                                
-                                const historyItem = document.createElement('div');
-                                historyItem.className = 'history-item';
-                                historyItem.style.cssText = 'padding: 10px; border-radius: 4px; background-color: #f5f5f5; cursor: pointer; position: relative;';
-                                historyItem.innerHTML = `
+            historyEmpty.style.display = 'none';
+
+            try {
+                const response = await fetch('/api/ai/history');
+                const data = await response.json();
+
+                if (data.success) {
+                    if (data.history && data.history.length > 0) {
+                        historyList.innerHTML = '';
+
+                        data.history.forEach(history => {
+                            const date = new Date(history.created_at);
+                            const formattedDate = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}-${date.getDate().toString().padStart(2, '0')} ${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`;
+
+                            const historyItem = document.createElement('div');
+                            historyItem.className = 'history-item';
+                            historyItem.style.cssText = 'padding: 10px; border-radius: 4px; background-color: #f5f5f5; cursor: pointer; position: relative;';
+                            historyItem.innerHTML = `
                                     <div style="margin-bottom: 4px; font-weight: bold; padding-right: 24px;">${history.title}</div>
                                     <div style="font-size: 0.8em; color: #666;">${formattedDate}</div>
                                     <div class="delete-history" data-id="${history.id}" style="position: absolute; right: 8px; top: 8px; width: 16px; height: 16px; opacity: 0.6;">
@@ -862,154 +919,154 @@
                                         </svg>
                                     </div>
                                 `;
-                                
-                                // 加载聊天内容
-                                historyItem.addEventListener('click', (e) => {
-                                    // 忽略删除按钮的点击
-                                    if (!e.target.closest('.delete-history')) {
-                                        loadHistoryContent(history.content);
-                                    }
-                                });
-                                
-                                historyList.appendChild(historyItem);
+
+                            // 加载聊天内容
+                            historyItem.addEventListener('click', (e) => {
+                                // 忽略删除按钮的点击
+                                if (!e.target.closest('.delete-history')) {
+                                    loadHistoryContent(history.content);
+                                }
                             });
-                            
-                            // 添加删除事件监听
-                            document.querySelectorAll('.delete-history').forEach(btn => {
-                                btn.addEventListener('click', (e) => {
-                                    e.stopPropagation();
-                                    const historyId = btn.getAttribute('data-id');
-                                    deleteHistory(historyId);
-                                });
+
+                            historyList.appendChild(historyItem);
+                        });
+
+                        // 添加删除事件监听
+                        document.querySelectorAll('.delete-history').forEach(btn => {
+                            btn.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                const historyId = btn.getAttribute('data-id');
+                                deleteHistory(historyId);
                             });
-                        } else {
-                            historyList.innerHTML = '';
-                            historyEmpty.style.display = 'block';
-                        }
+                        });
                     } else {
-                        historyList.innerHTML = `
+                        historyList.innerHTML = '';
+                        historyEmpty.style.display = 'block';
+                    }
+                } else {
+                    historyList.innerHTML = `
                             <div style="text-align: center; padding: 16px; color: red;">
                                 加载失败: ${data.error || '未知错误'}
                             </div>
                         `;
-                    }
-                } catch (error) {
-                    historyList.innerHTML = `
+                }
+            } catch (error) {
+                historyList.innerHTML = `
                         <div style="text-align: center; padding: 16px; color: red;">
                             加载失败: ${error.message || '网络错误'}
                         </div>
                     `;
-                }
             }
+        }
 
-            // 加载历史对话内容
-            function loadHistoryContent(contentJson) {
-                try {
-                    // 清空当前对话
-                    output.innerHTML = '';
-                    
-                    // 解析聊天历史
-                    const history = JSON.parse(contentJson);
-                    conversationHistory = history;
-                    
-                    // 显示历史对话
-                    let msgId = 1;
-                    history.forEach(msg => {
-                        if (msg.role === 'user') {
-                            output.innerHTML += `<p><strong>用户:</strong> ${msg.content}</p>`;
-                        } else if (msg.role === 'assistant') {
-                            const id = `msg-history-${msgId++}`;
-                            output.innerHTML += `<div id="${id}"><p><strong>AI：</strong></p><div class="markdown-content">${parseMarkdown(msg.content)}</div></div>`;
-                        }
-                    });
-                    
-                    // 关闭弹出窗口
-                    const popup = document.querySelector('s-popup.menu-button');
-                    popup.removeAttribute('opened');
-                    
-                    // 滚动到底部
-                    output.scrollTop = output.scrollHeight;
-                } catch (error) {
-                    console.error('加载历史内容失败:', error);
-                    alert('加载历史内容失败: ' + error.message);
-                }
-            }
+        // 加载历史对话内容
+        function loadHistoryContent(contentJson) {
+            try {
+                // 清空当前对话
+                output.innerHTML = '';
 
-            // 删除历史记录
-            async function deleteHistory(historyId) {
-                if (!confirm('确定要删除这条历史记录吗？')) {
-                    return;
-                }
-                
-                try {
-                    const response = await fetch(`/api/ai/history/${historyId}`, {
-                        method: 'DELETE'
+                // 解析聊天历史
+                const history = JSON.parse(contentJson);
+                conversationHistory = history;
+
+                // 显示历史对话
+                let msgId = 1;
+                history.forEach(msg => {
+                    if (msg.role === 'user') {
+                        output.innerHTML += `<p><strong>用户:</strong> ${msg.content}</p>`;
+                    } else if (msg.role === 'assistant') {
+                        const id = `msg-history-${msgId++}`;
+                        output.innerHTML += `<div id="${id}"><p><strong>AI：</strong></p><div class="markdown-content">${parseMarkdown(msg.content)}</div></div>`;
+                    }
                 });
-                
+
+                // 关闭弹出窗口
+                const popup = document.querySelector('s-popup.menu-button');
+                popup.removeAttribute('opened');
+
+                // 滚动到底部
+                output.scrollTop = output.scrollHeight;
+            } catch (error) {
+                console.error('加载历史内容失败:', error);
+                showSnackbar('加载历史内容失败: ' + error.message);
+            }
+        }
+
+        // 删除历史记录
+        async function deleteHistory(historyId) {
+            if (!confirm('确定要删除这条历史记录吗？')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`/api/ai/history/${historyId}`, {
+                    method: 'DELETE'
+                });
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     // 重新加载历史记录
                     loadChatHistory();
                 } else {
-                    alert('删除失败: ' + (data.error || '未知错误'));
+                    showSnackbar('删除失败: ' + (data.error || '未知错误'));
                 }
             } catch (error) {
                 console.error('删除历史记录失败:', error);
-                alert('删除失败: ' + error.message);
+                showSnackbar('删除失败: ' + error.message);
             }
         }
 
-            // 保存聊天历史
-            async function saveChatHistory() {
-                if (!currentUser || conversationHistory.length === 0) {
-                    return;
-                }
-                
-                try {
-                    // 获取第一条用户消息作为标题
-                    const firstUserMessage = conversationHistory.find(msg => msg.role === 'user');
-                    if (!firstUserMessage) return;
-                    
-                    // 截取标题（最多50个字符）
-                    const title = firstUserMessage.content.length > 50 
-                        ? firstUserMessage.content.substring(0, 47) + '...' 
-                        : firstUserMessage.content;
-                    
-                    // 准备完整对话内容
-                    const content = JSON.stringify(conversationHistory);
-                    
-                    // 发送保存请求
-                    const response = await fetch('/api/ai/save-history', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ title, content })
-                    });
-                    
-                    const data = await response.json();
-                    
-                    if (!data.success) {
-                        console.error('保存聊天历史失败:', data.error);
-                    }
-                } catch (error) {
-                    console.error('保存聊天历史失败:', error);
-                }
+        // 保存聊天历史
+        async function saveChatHistory() {
+            if (!currentUser || conversationHistory.length === 0) {
+                return;
             }
 
-            // 在流式传输完成时保存历史记录
-            // 修改 handleWebSocketMessage 函数中的 stream_complete 部分
-            const originalHandleWebSocketMessage = handleWebSocketMessage;
-            handleWebSocketMessage = function(message) {
-                originalHandleWebSocketMessage(message);
-                
-                // 在流式传输完成后保存历史记录
-                if (message.type === 'stream_complete') {
-                    saveChatHistory();
+            try {
+                // 获取第一条用户消息作为标题
+                const firstUserMessage = conversationHistory.find(msg => msg.role === 'user');
+                if (!firstUserMessage) return;
+
+                // 截取标题（最多50个字符）
+                const title = firstUserMessage.content.length > 50
+                    ? firstUserMessage.content.substring(0, 47) + '...'
+                    : firstUserMessage.content;
+
+                // 准备完整对话内容
+                const content = JSON.stringify(conversationHistory);
+
+                // 发送保存请求
+                const response = await fetch('/api/ai/save-history', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ title, content })
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    console.error('保存聊天历史失败:', data.error);
                 }
-            };
-        </script>
+            } catch (error) {
+                console.error('保存聊天历史失败:', error);
+            }
+        }
+
+        // 在流式传输完成时保存历史记录
+        // 修改 handleWebSocketMessage 函数中的 stream_complete 部分
+        const originalHandleWebSocketMessage = handleWebSocketMessage;
+        handleWebSocketMessage = function (message) {
+            originalHandleWebSocketMessage(message);
+
+            // 在流式传输完成后保存历史记录
+            if (message.type === 'stream_complete') {
+                saveChatHistory();
+            }
+        };
+    </script>
 </body>
 
 </html>
