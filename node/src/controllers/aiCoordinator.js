@@ -428,10 +428,19 @@ class WriterAI {
 // 审查专家AI
 class ReviewerAI {
     getSystemPrompt() {
-        return `你是业界顶级的质量控制专家，拥有严格的评判标准和丰富的审查经验。`;
+        return `你是业界顶级的质量控制专家，拥有严格的评判标准和丰富的审查经验。
+
+**严格评分标准：**
+- 9-10分：卓越品质，可直接商用
+- 7-8分：良好品质，需要微调
+- 5-6分：一般品质，需要改进
+- 3-4分：较差品质，需要重做
+- 1-2分：极差品质，完全重做
+
+**评分低于7分时必须打回重做！**`;
     }
 
-    async reviewAllResults(taskResults, originalPrompt, strategy, signal) {
+    async reviewAllResults(taskResults, originalPrompt, strategy, signal, maxRetries = 2, currentAttempt = 1) {
         const allContent = Object.values(taskResults)
             .map(result => `=== 任务${result.taskId}(${result.type}) ===\n${result.content}`)
             .join('\n\n');
@@ -463,35 +472,6 @@ class ReviewerAI {
                         if (visualResult.success) {
                             visualAnalysis = visualResult.visualAnalysis;
                             console.log('✅ 视觉分析完成，评分:', visualAnalysis.overallScore);
-                        } else {
-                            console.warn('⚠️ 高级视觉分析失败，使用基础HTML预览');
-                            // 降级使用基础HTML渲染器
-                            try {
-                                const previewResult = await htmlRenderer.convertToBase64(htmlContent);
-                                if (previewResult) {
-                                    visualAnalysis = {
-                                        method: 'basic-preview',
-                                        hasPreview: true,
-                                        message: '生成了基础HTML预览，但无法进行详细视觉分析'
-                                    };
-                                }
-                            } catch (previewError) {
-                                console.error('基础预览也失败:', previewError);
-                            }
-                        }
-                    } else {
-                        console.log('🔄 使用基础HTML渲染器...');
-                        try {
-                            const previewResult = await htmlRenderer.convertToBase64(htmlContent);
-                            if (previewResult) {
-                                visualAnalysis = {
-                                    method: 'basic-preview',
-                                    hasPreview: true,
-                                    message: '生成了基础HTML预览'
-                                };
-                            }
-                        } catch (previewError) {
-                            console.error('HTML预览失败:', previewError);
                         }
                     }
                 }
@@ -502,6 +482,8 @@ class ReviewerAI {
 
         const systemPrompt = this.getSystemPrompt();
         const reviewPrompt = `${systemPrompt}
+
+**审查轮次：${currentAttempt}/${maxRetries + 1}**
 
 用户原始需求: "${originalPrompt}"
 实现策略: ${JSON.stringify(strategy, null, 2)}
@@ -517,23 +499,43 @@ ${JSON.stringify(visualAnalysis, null, 2)}
 请将视觉分析结果纳入总体评价中。
 ` : ''}
 
-请按照业界最高标准进行质量审查，评估以下方面：
-1. 是否满足用户需求
-2. 内容质量和专业度
-3. 技术实现的正确性（如适用）
-4. 用户体验和可用性
-5. 创新性和完整性
-${visualAnalysis ? '6. 视觉设计质量（基于视觉分析结果）' : ''}
+**严格质量审查要求：**
+1. 功能完整性评估（0-10分）
+2. 内容质量和专业度（0-10分）
+3. 技术实现正确性（0-10分，如适用）
+4. 用户体验和可用性（0-10分）
+5. 创新性和完整性（0-10分）
+${visualAnalysis ? '6. 视觉设计质量（0-10分，基于视觉分析结果）' : ''}
 
-请进行质量审查并返回JSON格式结果：
+**关键要求：**
+- 综合评分低于7分必须打回重做
+- 必须提供具体、可执行的改进建议
+- 评分标准要严格，不能过于宽松
+
+返回JSON格式：
 {
-    "overallScore": 8,
-    "passStandard": true,
-    "issues": [],
-    "suggestions": [],
-    "professionalFeedback": "整体质量良好",
-    "approved": true,
-    "visualAnalysis": ${visualAnalysis ? 'true' : 'false'}
+    "overallScore": 数字评分(0-10),
+    "dimensionScores": {
+        "functionality": 0-10,
+        "quality": 0-10,
+        "technical": 0-10,
+        "usability": 0-10,
+        "innovation": 0-10
+        ${visualAnalysis ? ',"visual": 0-10' : ''}
+    },
+    "passStandard": true/false,
+    "approved": true/false,
+    "issues": ["具体问题1", "具体问题2"],
+    "suggestions": [
+        {
+            "issue": "具体问题描述",
+            "solution": "详细解决方案",
+            "priority": "high/medium/low"
+        }
+    ],
+    "professionalFeedback": "专业评价反馈",
+    "needsRework": true/false,
+    "reworkInstructions": "如果需要重做，提供具体指导"
 }
 
 只返回JSON：`;
@@ -544,6 +546,35 @@ ${visualAnalysis ? '6. 视觉设计质量（基于视觉分析结果）' : ''}
         // 将视觉分析结果附加到审查结果中
         if (visualAnalysis) {
             reviewResult.visualQuality = visualAnalysis;
+            // 如果视觉分析评分很低，强制降低总评分
+            if (visualAnalysis.overallScore < 6) {
+                reviewResult.overallScore = Math.min(reviewResult.overallScore, 6);
+                reviewResult.approved = false;
+                reviewResult.needsRework = true;
+                reviewResult.issues.push('视觉设计质量不达标');
+                reviewResult.suggestions.push({
+                    issue: '视觉设计需要重新设计',
+                    solution: '参考视觉分析建议进行重新设计',
+                    priority: 'high'
+                });
+            }
+        }
+        
+        // 严格执行评分标准
+        if (reviewResult.overallScore < 7) {
+            console.log(`❌ 质量审查未通过 - 评分: ${reviewResult.overallScore}/10 (第${currentAttempt}次尝试)`);
+            reviewResult.approved = false;
+            reviewResult.passStandard = false;
+            reviewResult.needsRework = true;
+            
+            if (!reviewResult.reworkInstructions) {
+                reviewResult.reworkInstructions = '根据以下建议进行重新制作，确保质量达到7分以上标准';
+            }
+        } else {
+            console.log(`✅ 质量审查通过 - 评分: ${reviewResult.overallScore}/10`);
+            reviewResult.approved = true;
+            reviewResult.passStandard = true;
+            reviewResult.needsRework = false;
         }
         
         return reviewResult;
@@ -558,31 +589,56 @@ ${visualAnalysis ? '6. 视觉设计质量（基于视觉分析结果）' : ''}
                 
                 const parsed = JSON.parse(jsonText);
                 
-                if (!parsed.overallScore) parsed.overallScore = 7;
+                // 确保所有必要字段存在
+                if (!parsed.overallScore) parsed.overallScore = 5;
                 if (!parsed.hasOwnProperty('approved')) parsed.approved = parsed.overallScore >= 7;
                 if (!parsed.passStandard) parsed.passStandard = parsed.approved;
+                if (!parsed.issues) parsed.issues = [];
+                if (!parsed.suggestions) parsed.suggestions = [];
+                if (!parsed.needsRework) parsed.needsRework = parsed.overallScore < 7;
+                if (!parsed.dimensionScores) {
+                    parsed.dimensionScores = {
+                        functionality: Math.max(1, parsed.overallScore - 1),
+                        quality: parsed.overallScore,
+                        technical: parsed.overallScore,
+                        usability: Math.min(10, parsed.overallScore + 1),
+                        innovation: parsed.overallScore
+                    };
+                }
                 
                 return parsed;
             } catch (e) {
                 console.error('❌ 审查结果解析失败:', e);
-                return {
-                    overallScore: 7,
-                    passStandard: true,
-                    approved: true,
-                    issues: [],
-                    suggestions: [],
-                    professionalFeedback: "审查完成，质量良好"
-                };
+                return this.getStrictDefaultReview();
             }
         }
         
+        return this.getStrictDefaultReview();
+    }
+
+    getStrictDefaultReview() {
         return {
-            overallScore: 7,
-            passStandard: true,
-            approved: true,
-            issues: [],
-            suggestions: [],
-            professionalFeedback: "审查完成，质量良好"
+            overallScore: 5,
+            dimensionScores: {
+                functionality: 5,
+                quality: 5,
+                technical: 5,
+                usability: 5,
+                innovation: 5
+            },
+            passStandard: false,
+            approved: false,
+            needsRework: true,
+            issues: ["无法正确评估质量", "需要重新生成内容"],
+            suggestions: [
+                {
+                    issue: "内容质量无法确定",
+                    solution: "重新生成并确保内容质量达标",
+                    priority: "high"
+                }
+            ],
+            professionalFeedback: "审查系统异常，建议重新生成内容",
+            reworkInstructions: "请重新生成内容，确保满足用户需求并达到专业标准"
         };
     }
 }
@@ -760,12 +816,13 @@ class AICoordinator {
             reviewer: new ReviewerAI(),
             writer: new WriterAI(),
             integrator: new IntegratorAI(),
-            visualAnalyzer: new VisualAnalyzerAI() // 新增视觉分析AI
+            visualAnalyzer: new VisualAnalyzerAI()
         };
+        this.maxRetries = 2; // 最多重试2次
     }
 
     /**
-     * 主入口 - 处理用户请求
+     * 主入口 - 处理用户请求（带质量控制循环）
      */
     async processUserRequest(prompt, history = []) {
         try {
@@ -778,39 +835,76 @@ class AICoordinator {
 
             // 第2步：思路AI制定详细实现思路
             console.log('步骤2: 制定详细实现思路');
-            const strategy = await this.aiWorkers.strategist.createStrategy(prompt, plan, history);
+            let strategy = await this.aiWorkers.strategist.createStrategy(prompt, plan, history);
             console.log('实现思路:', strategy);
 
-            // 第3步：并行分配任务给不同的专业AI
-            console.log('步骤3: 分配任务给专业AI');
-            const taskResults = await this.executeTasksInParallel(plan.tasks, prompt, strategy);
-            console.log('任务执行结果:', taskResults);
+            // 质量控制循环
+            let taskResults, reviewResults, finalResult;
+            let attempt = 1;
+            
+            while (attempt <= this.maxRetries + 1) {
+                console.log(`\n🔄 第${attempt}次执行开始`);
+                
+                // 第3步：并行分配任务给不同的专业AI
+                console.log(`步骤3.${attempt}: 分配任务给专业AI`);
+                taskResults = await this.executeTasksInParallel(plan.tasks, prompt, strategy);
+                console.log(`任务执行结果(第${attempt}次):`, taskResults);
 
-            // 第4步：审查AI审查所有结果
-            console.log('步骤4: 审查所有结果');
-            const reviewResults = await this.aiWorkers.reviewer.reviewAllResults(taskResults, prompt, strategy);
-            console.log('审查结果:', reviewResults);
+                // 第4步：审查AI审查所有结果
+                console.log(`步骤4.${attempt}: 审查所有结果`);
+                reviewResults = await this.aiWorkers.reviewer.reviewAllResults(
+                    taskResults, 
+                    prompt, 
+                    strategy, 
+                    null, 
+                    this.maxRetries, 
+                    attempt
+                );
+                console.log(`审查结果(第${attempt}次):`, reviewResults);
+
+                // 判断是否需要重做
+                if (reviewResults.needsRework && attempt <= this.maxRetries) {
+                    console.log(`❌ 第${attempt}次尝试未通过审查，评分: ${reviewResults.overallScore}/10`);
+                    console.log('🔧 问题列表:', reviewResults.issues);
+                    console.log('💡 改进建议:', reviewResults.suggestions);
+                    console.log('📋 重做指导:', reviewResults.reworkInstructions);
+                    
+                    // 更新策略，加入改进建议
+                    strategy = this.enhanceStrategyWithFeedback(strategy, reviewResults);
+                    attempt++;
+                    continue;
+                } else {
+                    if (reviewResults.approved) {
+                        console.log(`✅ 第${attempt}次尝试通过审查，评分: ${reviewResults.overallScore}/10`);
+                    } else {
+                        console.log(`⚠️ 达到最大重试次数，使用当前结果，评分: ${reviewResults.overallScore}/10`);
+                    }
+                    break;
+                }
+            }
 
             // 第5步：整合AI整合最终结果
             console.log('步骤5: 整合最终结果');
-            const finalResult = await this.aiWorkers.integrator.integrateResults(
+            finalResult = await this.aiWorkers.integrator.integrateResults(
                 taskResults, 
                 reviewResults, 
                 prompt, 
                 plan,
                 strategy
             );
-            console.log('最终整合结果:', finalResult);
+            console.log('最终整合结果完成');
 
             return {
                 success: true,
                 data: finalResult,
-                mode: 'multi-ai-coordinator',
+                mode: 'multi-ai-coordinator-with-qa',
                 process: {
                     plan: plan,
                     strategy: strategy,
                     taskResults: taskResults,
-                    reviewResults: reviewResults
+                    reviewResults: reviewResults,
+                    attempts: attempt,
+                    qualityScore: reviewResults.overallScore
                 }
             };
 
@@ -824,7 +918,32 @@ class AICoordinator {
     }
 
     /**
-     * 新增：流式处理用户请求
+     * 根据审查反馈增强策略
+     */
+    enhanceStrategyWithFeedback(originalStrategy, reviewResults) {
+        const enhancedStrategy = { ...originalStrategy };
+        
+        // 添加质量改进要求
+        enhancedStrategy.qualityRequirements = {
+            previousScore: reviewResults.overallScore,
+            targetScore: 8,
+            criticalIssues: reviewResults.issues,
+            improvementSuggestions: reviewResults.suggestions,
+            reworkGuidance: reviewResults.reworkInstructions
+        };
+        
+        // 更新实现步骤，加入改进要求
+        if (enhancedStrategy.implementation) {
+            enhancedStrategy.implementation.qualityFocus = reviewResults.suggestions.map(s => s.solution);
+            enhancedStrategy.implementation.avoidIssues = reviewResults.issues;
+        }
+        
+        console.log('🔧 策略已根据审查反馈增强');
+        return enhancedStrategy;
+    }
+
+    /**
+     * 流式处理用户请求（带质量控制）
      */
     async processUserRequestStream(prompt, history, streamCallback, stageCallback, signal) {
         try {
@@ -834,15 +953,69 @@ class AICoordinator {
 
             if (signal?.aborted) throw new DOMException('请求已中止', 'AbortError');
             stageCallback({ type: 'coordination_progress', stage: 2, progress: 25, message: '制定实现思路...' });
-            const strategy = await this.aiWorkers.strategist.createStrategy(prompt, plan, history, signal);
+            let strategy = await this.aiWorkers.strategist.createStrategy(prompt, plan, history, signal);
 
-            if (signal?.aborted) throw new DOMException('请求已中止', 'AbortError');
-            stageCallback({ type: 'coordination_progress', stage: 3, progress: 50, message: '并行执行任务...' });
-            const taskResults = await this.executeTasksInParallel(plan.tasks, prompt, strategy, signal);
+            // 质量控制循环
+            let taskResults, reviewResults;
+            let attempt = 1;
+            let currentProgress = 50;
+            
+            while (attempt <= this.maxRetries + 1) {
+                if (signal?.aborted) throw new DOMException('请求已中止', 'AbortError');
+                
+                const progressStep = Math.round(25 / (this.maxRetries + 1));
+                stageCallback({ 
+                    type: 'coordination_progress', 
+                    stage: 3, 
+                    progress: currentProgress, 
+                    message: `执行任务 (第${attempt}次尝试)...` 
+                });
+                
+                taskResults = await this.executeTasksInParallel(plan.tasks, prompt, strategy, signal);
 
-            if (signal?.aborted) throw new DOMException('请求已中止', 'AbortError');
-            stageCallback({ type: 'coordination_progress', stage: 4, progress: 75, message: '审查所有结果...' });
-            const reviewResults = await this.aiWorkers.reviewer.reviewAllResults(taskResults, prompt, strategy, signal);
+                if (signal?.aborted) throw new DOMException('请求已中止', 'AbortError');
+                
+                stageCallback({ 
+                    type: 'coordination_progress', 
+                    stage: 4, 
+                    progress: currentProgress + progressStep, 
+                    message: `质量审查 (第${attempt}次)...` 
+                });
+                
+                reviewResults = await this.aiWorkers.reviewer.reviewAllResults(
+                    taskResults, prompt, strategy, signal, this.maxRetries, attempt
+                );
+
+                if (reviewResults.needsRework && attempt <= this.maxRetries) {
+                    stageCallback({ 
+                        type: 'coordination_progress', 
+                        stage: 4, 
+                        progress: currentProgress + progressStep, 
+                        message: `质量未达标，准备重做 (评分: ${reviewResults.overallScore}/10)...` 
+                    });
+                    
+                    strategy = this.enhanceStrategyWithFeedback(strategy, reviewResults);
+                    attempt++;
+                    currentProgress += progressStep;
+                } else {
+                    if (reviewResults.approved) {
+                        stageCallback({ 
+                            type: 'coordination_progress', 
+                            stage: 4, 
+                            progress: 75, 
+                            message: `质量审查通过 (评分: ${reviewResults.overallScore}/10)` 
+                        });
+                    } else {
+                        stageCallback({ 
+                            type: 'coordination_progress', 
+                            stage: 4, 
+                            progress: 75, 
+                            message: `达到最大重试次数，使用当前结果 (评分: ${reviewResults.overallScore}/10)` 
+                        });
+                    }
+                    break;
+                }
+            }
 
             if (signal?.aborted) throw new DOMException('请求已中止', 'AbortError');
             stageCallback({ type: 'coordination_progress', stage: 5, progress: 90, message: '整合最终结果...' });

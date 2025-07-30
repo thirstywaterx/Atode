@@ -235,12 +235,20 @@ const AIData = async (req, res) => {
                     
                     let result;
                     let retryCount = 0;
-                    const maxRetries = 2;
+                    const maxRetries = 3; // 增加重试次数，因为现在有质量控制
                     
                     while (retryCount < maxRetries) {
                         if (useCoordinator && coordinator) {
                             console.log(`使用AI协调器 (尝试 ${retryCount + 1}/${maxRetries})`);
                             result = await coordinator.processUserRequest(prompt.trim(), history || []);
+                            
+                            // 检查质量评分，如果太低则重试
+                            if (result.success && result.process?.reviewResults?.overallScore < 6 && retryCount < maxRetries - 1) {
+                                console.log(`质量评分过低 (${result.process.reviewResults.overallScore}/10)，重试...`);
+                                retryCount++;
+                                await new Promise(resolve => setTimeout(resolve, 2000));
+                                continue;
+                            }
                         } else {
                             console.log(`使用基础AI (尝试 ${retryCount + 1}/${maxRetries})`);
                             result = await getAIPrompt(prompt.trim(), history || []);
@@ -253,9 +261,23 @@ const AIData = async (req, res) => {
                         
                         retryCount++;
                         if (retryCount < maxRetries) {
-                            console.log('请求超时，1秒后重试...');
-                            await new Promise(resolve => setTimeout(resolve, 1000));
+                            console.log('请求超时，2秒后重试...');
+                            await new Promise(resolve => setTimeout(resolve, 2000));
                         }
+                    }
+                    
+                    // 在返回结果中添加质量信息
+                    if (result.success && result.process?.reviewResults) {
+                        const review = result.process.reviewResults;
+                        result.qualityInfo = {
+                            score: review.overallScore,
+                            grade: review.overallScore >= 9 ? 'A+' : 
+                                   review.overallScore >= 8 ? 'A' : 
+                                   review.overallScore >= 7 ? 'B+' : 
+                                   review.overallScore >= 6 ? 'B' : 'C',
+                            attempts: result.process.attempts || 1,
+                            approved: review.approved
+                        };
                     }
                     
                     console.log('返回结果:', result);
