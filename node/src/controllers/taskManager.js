@@ -48,8 +48,8 @@ class TaskManager {
                                        /^(小说|故事|文章|散文|诗歌|剧本|日记|传记|报告|论文|说明|介绍|分析|评论|总结)/.test(lowerPrompt);
                 
                 // 检测代码开发需求
-                const isCodeRequest = /写|生成|创建|制作.*?(网页|网站|页面|代码|html|应用|主页)/.test(lowerPrompt) ||
-                                     /开发|设计|实现.*?(页面|网站|网页|应用)/.test(lowerPrompt);
+                const isCodeRequest = /写|生成|创建|制作.*?(网页|网站|页面|代码|html|css|js|程序|应用|主页|界面|布局|系统)/.test(lowerPrompt) ||
+                                     /开发|设计|实现.*?(页面|网站|网页|应用|系统)/.test(lowerPrompt);
                 
                 // 如果明确说不要代码，则不使用协调器
                 const noCodeRequest = /不要.*代码|不写.*代码|不需要.*代码|只要.*文字|只需要.*文字|纯文字/.test(lowerPrompt);
@@ -58,6 +58,15 @@ class TaskManager {
                 useCoordinator = (isWritingRequest || isCodeRequest) && !noCodeRequest;
                 
                 console.log(`📋 智能判断结果: 写作需求=${isWritingRequest}, 代码需求=${isCodeRequest}, 不要代码=${noCodeRequest}, useCoordinator=${useCoordinator}`);
+                
+                // 添加任务类型提示
+                if (useCoordinator) {
+                    if (isCodeRequest && !noCodeRequest) {
+                        console.log('🎯 预期任务类型: code (代码开发)');
+                    } else if (isWritingRequest || noCodeRequest) {
+                        console.log('🎯 预期任务类型: writing (文字创作)');
+                    }
+                }
             }
             
             let result;

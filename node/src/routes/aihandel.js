@@ -357,6 +357,60 @@ const AIData = async (req, res) => {
         }
     }
 
+    // 新增：HTML视觉质量分析路由
+    if (method === 'POST' && path === '/api/ai/analyze-visual') {
+        try {
+            let body = '';
+            req.on('data', chunk => {
+                body += chunk.toString();
+            });
+            
+            req.on('end', async () => {
+                try {
+                    const { htmlContent } = JSON.parse(body);
+                    
+                    if (!htmlContent) {
+                        res.setHeader('Content-Type', 'application/json');
+                        res.end(JSON.stringify({
+                            success: false,
+                            error: 'HTML内容不能为空'
+                        }));
+                        return;
+                    }
+                    
+                    // 使用visualRenderer进行严格的视觉分析
+                    const { visualRenderer } = require('../controllers/visualRenderer.js');
+                    
+                    if (!visualRenderer.isAvailable) {
+                        res.setHeader('Content-Type', 'application/json');
+                        res.end(JSON.stringify({
+                            success: false,
+                            error: '视觉分析服务不可用，请检查Puppeteer安装'
+                        }));
+                        return;
+                    }
+                    
+                    const analysisResult = await visualRenderer.comprehensiveAnalysis(htmlContent);
+                    
+                    res.setHeader('Content-Type', 'application/json');
+                    res.end(JSON.stringify(analysisResult));
+                } catch (error) {
+                    console.error('HTML视觉分析失败:', error);
+                    res.setHeader('Content-Type', 'application/json');
+                    res.end(JSON.stringify({
+                        success: false,
+                        error: '视觉分析失败: ' + error.message
+                    }));
+                }
+            });
+            
+            return true;
+        } catch (error) {
+            console.error('HTML视觉分析路由错误:', error);
+            return false;
+        }
+    }
+
     return false; // 表示未处理该路由
 }
 
