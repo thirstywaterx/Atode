@@ -32,6 +32,7 @@ async function initializeDatabase() {
             )
         `);
         
+        // 数据库初始化完成
         console.log('数据库初始化完成');
         return true;
     } catch (error) {

@@ -1,5 +1,5 @@
 {
-  "name": "cloudode",
+  "name": "atode",
   "version": "1.0.0",
   "description": "Multi-AI coordination system with lightweight HTML analysis",
   "main": "bin/www.js",

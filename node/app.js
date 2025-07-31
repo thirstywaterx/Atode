@@ -48,7 +48,7 @@ const serverHandler = async (req, res) => {
         return;
     }
 
-    // 构建文件路径（指向上级目录 d:\Cloudode）
+    // 构建文件路径（指向上级目录 d:\atode）
     const filePath = path.join(__dirname, '..', req.path);
 
     // 检查文件是否存在

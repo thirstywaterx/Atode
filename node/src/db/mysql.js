@@ -1,19 +1,13 @@
-const mysql = require('mysql2'); // 改为 mysql2
+const mysql = require('mysql2');
+const config = require('../../config/config.js');
 
-const connection = mysql.createConnection({
-    host: 'YOUR_HOST', // 替换为你的数据库主机
-    user: 'YOUR_USERNAME', // 替换为你的数据库用户名
-    password: 'YOUR_PASSWORD', // 替换为你的数据库密码
-    port: 3306, // 改为数字
-    database: 'atode',
-});
-
-connection.connect((err) => {
-    if (err) {
-        console.error('数据库连接失败:', err);
-        return;
-    }
-    console.log('数据库连接成功');
+const pool = mysql.createPool({
+    host: config.db.host,
+    port: config.db.port,
+    user: config.db.user,
+    password: config.db.password,
+    database: config.db.database,
+    connectionLimit: 10
 });
 
 function execSQL(sql, params, callback) {
@@ -23,13 +17,13 @@ function execSQL(sql, params, callback) {
         params = [];
     }
     
-    connection.query(sql, params, callback);
+    pool.query(sql, params, callback);
 }
 
 // 添加Promise版本的SQL查询函数
 function execSQLWithPromise(sql, params = []) {
     return new Promise((resolve, reject) => {
-        connection.query(sql, params, (error, results) => {
+        pool.query(sql, params, (error, results) => {
             if (error) {
                 reject(error);
             } else {
@@ -41,6 +35,5 @@ function execSQLWithPromise(sql, params = []) {
 
 module.exports = {
     execSQL,
-    execSQLWithPromise,
-    connection
+    execSQLWithPromise
 };
