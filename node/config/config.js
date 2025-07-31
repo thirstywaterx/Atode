@@ -1,7 +1,7 @@
 module.exports = {
     gemini: {
-        apiKey: 'AIzaSyBs9Xh3dsOBFBj4fuvynYxdFXRKoVXs-x4',
+        apiKey: 'YOUR_API_KEY',
         baseUrl: 'generativelanguage.googleapis.com',
-        model: 'gemini-2.5-pro' // 使用支持流式传输的flash模型
+        model: 'gemini-2.5-pro'
     }
 };

@@ -24,8 +24,16 @@
             font-family: Arial, sans-serif;
         }
 
+        s-scroll-view {
+            position: absolute;
+            top: 0;
+            height: 100vh;
+            width: 100%;
+            margin-bottom: 400px;
+        }
+
         s-page {
-            min-height: calc(100vh + 20px);
+            height: 100vh;
             --color-icon: #40484c;
             --color-card: lightgray;
             --color-input: #f8f9fb;
@@ -40,7 +48,7 @@
         #output {
             position: relative;
             top: 50px;
-            width: 90%;
+            min-width: 90%;
             min-height: calc(100vh - 200px);
             left: 50%;
             transform: translateX(-50%);
@@ -51,13 +59,6 @@
             -moz-user-select: text;
             -ms-user-select: text;
             user-select: text;
-        }
-
-        #space {
-            position: relative;
-            bottom: 0;
-            width: 100%;
-            height: 200px;
         }
 
         #prompt_input {
@@ -263,11 +264,11 @@
 
         /* highlightjs-copy 按钮显示优化 */
         .hljs-copy-button {
+            float: right !important;
             top: 8px !important;
             right: 8px !important;
             opacity: 1 !important;
-            background: rgba(0, 0, 0, 0.8) !important;
-            color: white !important;
+            color: var(--color-icon) !important;
             border: none !important;
             border-radius: 4px !important;
             padding: 4px 8px !important;
@@ -276,17 +277,46 @@
             z-index: 10 !important;
         }
 
-        .hljs-copy-button:hover {
-            background: rgba(0, 0, 0, 0.9) !important;
-        }
-
         /* 确保代码块容器有相对定位 */
         .hljs-copy-wrapper {
             position: relative !important;
         }
 
-        /* 其他样式保持不变 */
-        /* ...existing styles... */
+        :not(:defined) {
+            display: none;
+        }
+
+        .dialog {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding: 24px;
+        }
+
+        .dialog>.text-field {
+            flex-grow: 1;
+            width: auto;
+        }
+
+        .dialog>.link {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: .875rem;
+        }
+
+        .dialog>.link>a {
+            color: var(--s-color-primary);
+            text-decoration: none;
+        }
+
+        .dialog>.other {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            padding: 0 24px;
+        }
+    </style>
     </style>
 </head>
 
@@ -389,8 +419,12 @@
 
         </s-card>
 
-        <div id="output"></div>
-        <div id="space"></div>
+
+        <s-scroll-view>
+            <div id="output"></div>
+        </s-scroll-view>
+
+
 
 
         <s-text-field id="prompt_input" label="请输入Prompt" type="multiLine" style="min-height: 96px">
@@ -682,7 +716,7 @@
             if (window.hljs && window.CopyButtonPlugin) {
                 hljs.addPlugin(new CopyButtonPlugin({
                     lang: 'zh-CN',
-                    callback: function(text, el) {
+                    callback: function (text, el) {
                         console.log('✅ 代码已复制到剪贴板');
                         showSnackbar('代码已复制到剪贴板');
                     }
@@ -697,24 +731,24 @@
         // 为代码块添加复制功能
         function addCopyToCodeBlocks(container) {
             if (!container) return;
-            
+
             const codeBlocks = container.querySelectorAll('pre code');
             codeBlocks.forEach(block => {
                 // 重新高亮
                 hljs.highlightElement(block);
-                
+
                 // 确保父元素有相对定位
                 const pre = block.parentElement;
                 if (pre && pre.tagName === 'PRE') {
                     pre.classList.add('hljs-copy-wrapper');
-                    
+
                     // 检查是否已经有复制按钮
                     if (!pre.querySelector('.hljs-copy-button')) {
                         // 手动创建复制按钮
                         const copyButton = document.createElement('button');
                         copyButton.className = 'hljs-copy-button';
                         copyButton.textContent = '复制';
-                        copyButton.onclick = function() {
+                        copyButton.onclick = function () {
                             navigator.clipboard.writeText(block.textContent).then(() => {
                                 showSnackbar('代码已复制到剪贴板');
                                 copyButton.textContent = '已复制';
@@ -782,6 +816,8 @@
                     const startDiv = `<div id="${currentMessageId}"><p><strong>AI：</strong>正在处理...</p></div>`;
                     output.innerHTML += startDiv;
                     console.log('✅ 已添加处理容器:', currentMessageId);
+                    // 滚动到底部
+                    setTimeout(() => { output.scrollTop = output.scrollHeight; }, 0);
                     break;
 
                 case 'coordination_progress':
@@ -884,6 +920,8 @@
                     isProcessing = false;
                     setProcessingState(false);
                     output.innerHTML += `<p><strong>错误:</strong> ${message.message}</p>`;
+                    // 滚动到底部
+                    setTimeout(() => { output.scrollTop = output.scrollHeight; }, 0);
                     break;
 
                 default:
@@ -924,7 +962,7 @@
 
             if (!currentUser) {
                 showSnackbar('请先登录后再使用AI功能。');
-                dialog.showed = true; // 显示登录对话框
+                dialog.showed = true;
                 return;
             }
 
@@ -947,35 +985,35 @@
                 content: prompt
             });
 
-            // 更精确的意图识别
+            // 智能识别任务类型，决定是否使用协调器
             const lowerPrompt = prompt.toLowerCase();
 
-            // 首先检测文字创作需求
+            // 检测编程需求（需要使用协调器的专业任务）
+            const isProgrammingRequest = /python|java|c\+\+|javascript|node\.?js|编程|代码|算法|函数|脚本/.test(lowerPrompt) ||
+                /数据分析|机器学习|深度学习|爬虫|api|数据库/.test(lowerPrompt) ||
+                /网页|网站|前端|html|css|页面|界面|布局/.test(lowerPrompt);
+
+            // 检测写作需求
             const isWritingRequest = /写.*?(小说|故事|文章|散文|诗歌|剧本|日记|传记|报告|论文|说明|介绍|分析|评论|总结)/.test(lowerPrompt) ||
-                /创作.*?(小说|故事|文章|散文|诗歌|剧本)/.test(lowerPrompt) ||
-                /^(小说|故事|文章|散文|诗歌|剧本|日记|传记|报告|论文|说明|介绍|分析|评论|总结)/.test(lowerPrompt);
+                /创作.*?(小说|故事|文章|散文|诗歌|剧本)/.test(lowerPrompt);
 
-            // 检测代码开发需求
-            const isCodeRequest = /写|生成|创建|制作.*?(网页|网站|页面|代码|html|css|js|程序|应用|主页|界面|布局|系统)/.test(lowerPrompt) ||
-                /开发|设计|实现.*?(页面|网站|网页|应用|系统)/.test(lowerPrompt);
+            // 明确的否定编程
+            const explicitNoCode = /不要.*代码|不写.*代码|不需要.*代码|只要.*文字|只需要.*文字|纯文字/.test(lowerPrompt);
 
-            // 明确的否定
-            const explicitNoCode = /不要.*代码|不写.*代码|不需要.*代码|只要.*文字|只需要.*文字|纯文字说明/.test(lowerPrompt);
-
-            // 优先级：写作需求 > 明确不要代码 > 代码需求
+            // 决定是否使用协调器
             let useCoordinator;
             if (isWritingRequest || explicitNoCode) {
-                useCoordinator = true;  // 文字创作也使用协调器，但会分配给写作AI
-                console.log('📝 识别为文字创作需求，使用写作专家AI');
-            } else if (isCodeRequest) {
-                useCoordinator = true;  // 代码开发使用协调器，分配给代码AI
-                console.log('💻 识别为代码开发需求，使用代码专家AI');
+                useCoordinator = true;
+                console.log('📝 识别为文字创作需求，使用写作专家');
+            } else if (isProgrammingRequest) {
+                useCoordinator = true;
+                console.log('💻 识别为编程需求，使用专业编程专家');
             } else {
-                useCoordinator = false; // 普通问答不使用协调器
-                console.log('💬 识别为普通问答，使用基础AI');
+                useCoordinator = false;
+                console.log('💬 识别为一般问答，使用基础AI');
             }
 
-            console.log(`🤖 智能判断: 写作需求=${isWritingRequest}, 代码需求=${isCodeRequest}, 明确不要代码=${explicitNoCode}, 使用协调器=${useCoordinator}`);
+            console.log(`🤖 智能判断: 编程需求=${isProgrammingRequest}, 写作需求=${isWritingRequest}, 明确不要代码=${explicitNoCode}, 使用协调器=${useCoordinator}`);
 
             // 通过WebSocket发送请求
             const message = {
@@ -988,7 +1026,8 @@
             ws.send(JSON.stringify(message));
 
             promptInput.value = '';
-            output.scrollTop = output.scrollHeight;
+            // 滚动到底部
+            setTimeout(() => { output.scrollTop = output.scrollHeight; }, 0);
         }
 
         // 停止处理
@@ -1040,7 +1079,7 @@
                 // 3. 创建临时容器来处理代码高亮和复制功能
                 const tempDiv = document.createElement('div');
                 tempDiv.innerHTML = html;
-                
+
                 // 4. 为代码块添加复制功能
                 addCopyToCodeBlocks(tempDiv);
 
@@ -1220,7 +1259,7 @@
                         messageDiv.id = id;
                         messageDiv.innerHTML = `<p><strong>AI：</strong></p><div class="markdown-content">${parseMarkdown(msg.content)}</div>`;
                         output.appendChild(messageDiv);
-                        
+
                         // 为新添加的代码块添加复制功能
                         addCopyToCodeBlocks(messageDiv);
                     }
@@ -1231,7 +1270,7 @@
                 popup.removeAttribute('opened');
 
                 // 滚动到底部
-                output.scrollTop = output.scrollHeight;
+                setTimeout(() => { output.scrollTop = output.scrollHeight; }, 0);
             } catch (error) {
                 console.error('加载历史内容失败:', error);
                 showSnackbar('加载历史内容失败: ' + error.message);
@@ -1349,18 +1388,6 @@
                 return markdown;
             }
         }
-
-        // 修复弹窗打开页面滚动到顶部问题
-        document.addEventListener('DOMContentLoaded', function () {
-            document.querySelectorAll('s-popup.menu-button').forEach(popup => {
-                popup.addEventListener('opened', function (e) {
-                    // 阻止弹窗聚焦导致滚动
-                    setTimeout(() => {
-                        window.scrollTo({ top: window.scrollY });
-                    }, 10);
-                });
-            });
-        });
 
         // 支持按下 Enter 发送，Shift+Enter 换行
         promptInput.addEventListener('keydown', function (event) {

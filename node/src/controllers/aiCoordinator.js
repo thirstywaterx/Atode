@@ -14,6 +14,17 @@ class PlannerAI {
 
 你必须严格按照JSON格式返回计划，不能包含任何其他内容。
 
+支持的任务类型：
+- "python": Python编程任务
+- "javascript": JavaScript/Node.js编程任务
+- "web": 前端网页开发任务
+- "java": Java编程任务
+- "cpp": C++编程任务
+- "data_analysis": 数据分析任务
+- "machine_learning": 机器学习任务
+- "writing": 文字创作任务
+- "general": 一般问答任务
+
 输出格式要求：
 - 只能输出JSON
 - 不能有任何解释性文字
@@ -22,26 +33,11 @@ class PlannerAI {
     }
 
     async createPlan(prompt, history, signal) {
-        // 构建包含系统提示词的完整提示
         const systemPrompt = this.getSystemPrompt();
         
-        // 预先判断任务类型，强制AI只生成我们支持的类型
-        const lowerPrompt = prompt.toLowerCase();
-        const isCodeRequest = /写|生成|创建|制作.*?(网页|网站|页面|代码|html|css|js|程序|应用|主页|界面|布局|系统)/.test(lowerPrompt) ||
-                             /开发|设计|实现.*?(页面|网站|网页|应用|系统)/.test(lowerPrompt);
-        const isWritingRequest = /写.*?(小说|故事|文章|散文|诗歌|剧本|日记|传记|报告|论文|说明|介绍|分析|评论|总结)/.test(lowerPrompt) ||
-                                /创作.*?(小说|故事|文章|散文|诗歌|剧本)/.test(lowerPrompt);
-        const noCodeRequest = /不要.*代码|不写.*代码|不需要.*代码|只要.*文字|只需要.*文字|纯文字/.test(lowerPrompt);
+        // 智能识别任务类型
+        const taskType = this.identifyTaskType(prompt);
         
-        let expectedTaskType;
-        if (isWritingRequest || noCodeRequest) {
-            expectedTaskType = "writing";
-        } else if (isCodeRequest) {
-            expectedTaskType = "code";
-        } else {
-            expectedTaskType = "code"; // 默认为代码任务，因为"个人主页"通常需要代码
-        }
-
         const planPrompt = `${systemPrompt}
 
 用户需求: "${prompt}"
@@ -51,9 +47,9 @@ class PlannerAI {
 2. 绝对不能直接回答用户问题
 3. 不能生成任何最终内容
 4. 不能包含解释性文字
-5. 任务类型只能是 "code" 或 "writing"，不能使用其他类型
+5. 任务类型必须是: ${taskType}
 
-根据需求分析，这个任务应该是：${expectedTaskType} 类型
+根据需求分析，这个任务应该是：${taskType} 类型
 
 请分析需求并返回执行计划：
 
@@ -62,7 +58,7 @@ class PlannerAI {
     "tasks": [
         {
             "id": "main_task",
-            "type": "${expectedTaskType}",
+            "type": "${taskType}",
             "description": "具体任务描述",
             "deliverable": "最终交付物",
             "priority": 1
@@ -71,33 +67,28 @@ class PlannerAI {
     "complexity": "medium"
 }
 
-只返回上述JSON格式，任务类型必须是 "${expectedTaskType}"，不要任何其他内容：`;
+只返回上述JSON格式，任务类型必须是 "${taskType}"，不要任何其他内容：`;
 
         console.log('📤 发送给计划AI的提示词预览:', planPrompt.substring(0, 200) + '...');
         
-        // 使用包含系统提示词的完整提示调用AI，传入空的history以确保专注于计划制定
         const result = await getAIPrompt(planPrompt, [], signal);
         
         console.log('📥 计划AI返回的原始数据预览:', result.data?.substring(0, 200) + '...');
         
         if (result.success) {
             try {
-                // 更严格的JSON提取
                 let jsonText = result.data.trim();
                 
                 console.log('🔍 原始响应长度:', jsonText.length);
                 
-                // 如果响应明显不是JSON（包含太多文字），直接使用默认计划
                 if (jsonText.length > 2000 || /好的|这是|可以|如下|以下是/.test(jsonText.substring(0, 50))) {
                     console.warn('⚠️ 检测到AI返回了文字回答而非JSON，使用默认计划');
                     return this.getEnhancedDefaultPlan(prompt);
                 }
                 
-                // 移除可能的markdown代码块标记
                 jsonText = jsonText.replace(/^```json\s*/i, '').replace(/```\s*$/i, '');
                 jsonText = jsonText.replace(/^```\s*/i, '').replace(/```\s*$/i, '');
                 
-                // 查找JSON对象
                 const jsonMatch = jsonText.match(/\{[\s\S]*\}/);
                 if (jsonMatch) {
                     jsonText = jsonMatch[0];
@@ -112,14 +103,14 @@ class PlannerAI {
                 // 验证并修正任务类型
                 if (parsed.tasks && Array.isArray(parsed.tasks)) {
                     parsed.tasks.forEach(task => {
-                        if (task.type !== 'code' && task.type !== 'writing') {
-                            console.warn(`⚠️ 修正无效任务类型: ${task.type} -> ${expectedTaskType}`);
-                            task.type = expectedTaskType;
+                        const validTypes = ['python', 'javascript', 'web', 'java', 'cpp', 'data_analysis', 'machine_learning', 'writing', 'general'];
+                        if (!validTypes.includes(task.type)) {
+                            console.warn(`⚠️ 修正无效任务类型: ${task.type} -> ${taskType}`);
+                            task.type = taskType;
                         }
                     });
                 }
                 
-                // 验证是否是有效的计划
                 if (!parsed.tasks || parsed.tasks.length === 0) {
                     console.warn('⚠️ 计划AI返回的计划无效，使用增强默认计划');
                     return this.getEnhancedDefaultPlan(prompt);
@@ -140,88 +131,103 @@ class PlannerAI {
     }
 
     /**
-     * 新增：增强默认计划
+     * 智能识别任务类型
      */
-    getEnhancedDefaultPlan(prompt) {
+    identifyTaskType(prompt) {
         const lowerPrompt = prompt.toLowerCase();
         
-        // 更精确的需求分析
-        const isWritingRequest = /写.*?(小说|故事|文章|散文|诗歌|剧本|日记|传记|报告|论文|说明|介绍|分析|评论|总结)/.test(lowerPrompt) ||
-                                /创作.*?(小说|故事|文章|散文|诗歌|剧本)/.test(lowerPrompt) ||
-                                /^(小说|故事|文章|散文|诗歌|剧本|日记|传记|报告|论文|说明|介绍|分析|评论|总结)/.test(lowerPrompt);
-        
-        const isCodeRequest = /写|生成|创建|制作.*?(网页|网站|页面|代码|html|css|js|程序|应用|主页|界面|布局|系统)/.test(lowerPrompt) ||
-                             /开发|设计|实现.*?(页面|网站|网页|应用|系统)/.test(lowerPrompt);
-        
-        const noCodeKeywords = ['不要.*代码', '不写.*代码', '不需要.*代码', '只要.*文字', '只需要.*文字', '纯文字', '文字说明'];
-        const isNoCodeRequest = noCodeKeywords.some(keyword => new RegExp(keyword).test(lowerPrompt));
-        
-        let finalType;
-        if (isWritingRequest || isNoCodeRequest) {
-            finalType = "writing";
-            console.log('📝 识别为文字创作需求');
-        } else if (isCodeRequest) {
-            finalType = "code";
-            console.log('💻 识别为代码开发需求');
-        } else {
-            finalType = "writing";
-            console.log('💬 默认识别为文字创作需求');
+        // Python相关关键词
+        if (/python|py|pandas|numpy|matplotlib|django|flask|爬虫|数据分析/.test(lowerPrompt)) {
+            return 'python';
         }
         
-        // 根据类型提供增强的默认计划
-        if (finalType === "writing") {
-            return {
-                userRequest: prompt,
-                deepAnalysis: {
-                    explicitNeeds: ["创作指定类型的文字内容"],
-                    implicitNeeds: ["内容要有吸引力", "语言要流畅自然", "结构要清晰合理"],
-                    potentialNeeds: ["考虑目标读者群体", "适合的传播渠道", "后续修改和优化"],
-                    userScenarios: ["阅读欣赏", "分享传播", "学习参考"],
-                    experienceGoals: ["引人入胜", "易于理解", "留下深刻印象"]
-                },
-                enhancedRequirements: ["增加情感共鸣元素", "优化语言表达", "完善内容结构"],
-                complexity: "medium",
-                tasks: [
-                    {
-                        id: "main_task",
-                        type: "writing", // 确保类型正确
-                        description: prompt + "（增强版：包含更丰富的细节、更生动的表达、更完整的结构）",
-                        deliverable: "高质量原创文字内容",
-                        priority: 1,
-                        enhancedFeatures: ["生动的细节描写", "流畅的语言表达", "清晰的逻辑结构", "情感共鸣点"]
-                    }
-                ],
-                strategy: "通过深度创作超越用户期望，提供具有感染力和传播价值的优质内容",
-                qualityStandards: ["内容原创性100%", "语言表达优美流畅", "结构逻辑清晰", "情感真挚感人"],
-                successMetrics: ["读者满意度", "内容完整度", "语言质量", "创新性"]
-            };
-        } else {
-            return {
-                userRequest: prompt,
-                deepAnalysis: {
-                    explicitNeeds: ["实现指定的功能需求"],
-                    implicitNeeds: ["界面美观易用", "性能稳定流畅", "兼容性良好"],
-                    potentialNeeds: ["移动端适配", "无障碍访问", "SEO优化", "未来扩展性"],
-                    userScenarios: ["不同设备访问", "不同网络环境", "不同用户群体"],
-                    experienceGoals: ["快速加载", "直观操作", "稳定运行"]
-                },
-                enhancedRequirements: ["响应式设计", "性能优化", "用户体验增强", "代码规范化"],
-                complexity: "medium",
-                tasks: [
-                    {
-                        id: "main_task",
-                        type: "code", // 确保类型正确
-                        description: prompt + "（增强版：包含响应式设计、性能优化、无障碍访问等现代化特性）",
-                        deliverable: "完整可运行的现代化代码",
-                        priority: 1,
-                        enhancedFeatures: ["响应式布局", "性能优化", "无障碍访问", "代码注释", "错误处理"]
-                    }
-                ],
-                strategy: "采用现代化前端技术，确保代码质量和用户体验达到行业标准",
-                qualityStandards: ["代码规范化", "性能优秀", "兼容性好", "可维护性强"],
-                successMetrics: ["功能完整度", "性能指标", "用户体验", "代码质量"]
-            };
+        // 机器学习/数据科学关键词
+        if (/机器学习|深度学习|神经网络|tensorflow|pytorch|sklearn|算法|模型|训练/.test(lowerPrompt)) {
+            return 'machine_learning';
         }
+        
+        // 数据分析关键词
+        if (/数据分析|数据处理|统计|图表|可视化|excel|csv/.test(lowerPrompt)) {
+            return 'data_analysis';
+        }
+        
+        // Java相关关键词
+        if (/java|spring|maven|gradle|安卓|android/.test(lowerPrompt)) {
+            return 'java';
+        }
+        
+        // C++相关关键词
+        if (/c\+\+|cpp|c语言|系统编程|游戏开发/.test(lowerPrompt)) {
+            return 'cpp';
+        }
+        
+        // JavaScript/Node.js相关关键词
+        if (/node\.?js|express|npm|后端|api|服务器/.test(lowerPrompt) && !/网页|前端|html|css/.test(lowerPrompt)) {
+            return 'javascript';
+        }
+        
+        // 前端网页开发关键词
+        if (/网页|网站|前端|html|css|javascript|react|vue|angular|页面|界面|布局/.test(lowerPrompt)) {
+            return 'web';
+        }
+        
+        // 文字创作关键词
+        if (/写.*?(小说|故事|文章|散文|诗歌|剧本|日记|传记|报告|论文|说明|介绍|分析|评论|总结)/.test(lowerPrompt) ||
+            /创作.*?(小说|故事|文章|散文|诗歌|剧本)/.test(lowerPrompt) ||
+            /不要.*代码|不写.*代码|不需要.*代码|只要.*文字|只需要.*文字|纯文字/.test(lowerPrompt)) {
+            return 'writing';
+        }
+        
+        // 默认为一般问答
+        return 'general';
+    }
+
+    /**
+     * 增强默认计划
+     */
+    getEnhancedDefaultPlan(prompt) {
+        const taskType = this.identifyTaskType(prompt);
+        
+        const typeDescriptions = {
+            'python': 'Python编程开发',
+            'javascript': 'JavaScript/Node.js开发',
+            'web': '前端网页开发',
+            'java': 'Java编程开发',
+            'cpp': 'C++编程开发',
+            'data_analysis': '数据分析处理',
+            'machine_learning': '机器学习开发',
+            'writing': '文字内容创作',
+            'general': '一般问题解答'
+        };
+        
+        console.log(`🎯 智能识别任务类型: ${taskType} (${typeDescriptions[taskType]})`);
+        
+        return {
+            userRequest: prompt,
+            deepAnalysis: {
+                taskType: taskType,
+                description: typeDescriptions[taskType],
+                explicitNeeds: [`完成${typeDescriptions[taskType]}任务`],
+                implicitNeeds: ["高质量实现", "最佳实践", "清晰文档"],
+                potentialNeeds: ["错误处理", "性能优化", "可维护性"],
+                userScenarios: ["学习使用", "项目应用", "参考借鉴"],
+                experienceGoals: ["易于理解", "直接可用", "专业质量"]
+            },
+            complexity: "medium",
+            tasks: [
+                {
+                    id: "main_task",
+                    type: taskType,
+                    description: `${prompt}（专业实现，包含最佳实践和详细说明）`,
+                    deliverable: `高质量的${typeDescriptions[taskType]}成果`,
+                    priority: 1,
+                    enhancedFeatures: ["专业实现", "详细注释", "最佳实践", "完整文档"]
+                }
+            ],
+            strategy: `采用专业${typeDescriptions[taskType]}方法，确保代码质量和实用性`,
+            qualityStandards: ["功能完整", "代码规范", "性能良好", "易于理解"],
+            successMetrics: ["功能完整度", "代码质量", "用户体验", "文档完善度"]
+        };
     }
 }
 
@@ -804,6 +810,356 @@ class VisualAnalyzerAI {
     }
 }
 
+// Python编程专家AI
+class PythonDeveloperAI {
+    getSystemPrompt() {
+        return `你是资深的Python开发工程师，精通Python生态系统和最佳实践。
+
+专业领域：
+- Python核心编程
+- 数据处理 (pandas, numpy)
+- Web开发 (Django, Flask, FastAPI)
+- 自动化脚本
+- API开发
+- 数据库操作
+
+你只处理Python相关的开发任务，提供高质量、可运行的Python代码。`;
+    }
+
+    async process(task, originalPrompt, strategy, signal) {
+        console.log('🐍 Python专家AI开始编程');
+        const systemPrompt = this.getSystemPrompt();
+        const codePrompt = `${systemPrompt}
+
+用户原始需求: "${originalPrompt}"
+具体任务: "${task.description}"
+实现策略: ${JSON.stringify(strategy, null, 2)}
+
+要求：
+1. 生成完整可运行的Python代码
+2. 采用Python最佳实践和PEP8规范
+3. 包含详细的注释和文档字符串
+4. 添加适当的错误处理
+5. 提供使用示例和说明
+
+请生成高质量的Python代码：`;
+
+        const result = await getAIPrompt(codePrompt, [], signal);
+        return {
+            taskId: task.id,
+            type: 'python',
+            content: result.success ? result.data : 'Python代码生成失败',
+            success: result.success
+        };
+    }
+}
+
+// JavaScript/Node.js专家AI
+class JavaScriptDeveloperAI {
+    getSystemPrompt() {
+        return `你是资深的JavaScript/Node.js开发工程师，精通现代JS生态系统。
+
+专业领域：
+- 现代JavaScript (ES6+)
+- Node.js后端开发
+- Express.js框架
+- 异步编程
+- API开发
+- 数据库集成
+
+你只处理JavaScript/Node.js相关的开发任务，提供高质量、现代化的JavaScript代码。`;
+    }
+
+    async process(task, originalPrompt, strategy, signal) {
+        console.log('📜 JavaScript专家AI开始编程');
+        const systemPrompt = this.getSystemPrompt();
+        const codePrompt = `${systemPrompt}
+
+用户原始需求: "${originalPrompt}"
+具体任务: "${task.description}"
+实现策略: ${JSON.stringify(strategy, null, 2)}
+
+要求：
+1. 生成完整可运行的JavaScript/Node.js代码
+2. 使用现代ES6+语法和最佳实践
+3. 包含详细的注释和JSDoc文档
+4. 添加适当的错误处理和类型检查
+5. 提供使用示例和说明
+
+请生成高质量的JavaScript代码：`;
+
+        const result = await getAIPrompt(codePrompt, [], signal);
+        return {
+            taskId: task.id,
+            type: 'javascript',
+            content: result.success ? result.data : 'JavaScript代码生成失败',
+            success: result.success
+        };
+    }
+}
+
+// Web前端专家AI
+class WebDeveloperAI {
+    getSystemPrompt() {
+        return `你是资深的前端开发工程师，专精于现代Web技术。
+
+专业领域：
+- HTML5, CSS3, JavaScript
+- 响应式设计
+- 现代CSS (Grid, Flexbox)
+- 前端框架 (React, Vue)
+- 用户体验设计
+- 性能优化
+
+你只处理前端网页开发任务，提供现代化、响应式的Web解决方案。`;
+    }
+
+    async process(task, originalPrompt, strategy, signal) {
+        console.log('🌐 Web前端专家AI开始开发');
+        const systemPrompt = this.getSystemPrompt();
+        const codePrompt = `${systemPrompt}
+
+用户原始需求: "${originalPrompt}"
+具体任务: "${task.description}"
+实现策略: ${JSON.stringify(strategy, null, 2)}
+
+要求：
+1. 生成完整的HTML、CSS和JavaScript代码
+2. 采用现代前端开发最佳实践
+3. 实现响应式设计，支持移动端
+4. 确保代码的可读性和可维护性
+5. 包含必要的注释和说明
+
+请生成高质量的前端代码：`;
+
+        const result = await getAIPrompt(codePrompt, [], signal);
+        return {
+            taskId: task.id,
+            type: 'web',
+            content: result.success ? result.data : '前端代码生成失败',
+            success: result.success
+        };
+    }
+}
+
+// Java编程专家AI
+class JavaDeveloperAI {
+    getSystemPrompt() {
+        return `你是资深的Java开发工程师，精通Java生态系统和企业级开发。
+
+专业领域：
+- Java核心编程
+- Spring框架生态
+- Maven/Gradle构建工具
+- 数据库操作 (JDBC, JPA)
+- 微服务架构
+- Android开发
+
+你只处理Java相关的开发任务，提供高质量、可运行的Java代码。`;
+    }
+
+    async process(task, originalPrompt, strategy, signal) {
+        console.log('☕ Java专家AI开始编程');
+        const systemPrompt = this.getSystemPrompt();
+        const codePrompt = `${systemPrompt}
+
+用户原始需求: "${originalPrompt}"
+具体任务: "${task.description}"
+实现策略: ${JSON.stringify(strategy, null, 2)}
+
+要求：
+1. 生成完整可运行的Java代码
+2. 采用Java最佳实践和编码规范
+3. 包含详细的注释和JavaDoc文档
+4. 添加适当的异常处理
+5. 提供使用示例和说明
+
+请生成高质量的Java代码：`;
+
+        const result = await getAIPrompt(codePrompt, [], signal);
+        return {
+            taskId: task.id,
+            type: 'java',
+            content: result.success ? result.data : 'Java代码生成失败',
+            success: result.success
+        };
+    }
+}
+
+// C++编程专家AI
+class CppDeveloperAI {
+    getSystemPrompt() {
+        return `你是资深的C++开发工程师，精通现代C++和系统编程。
+
+专业领域：
+- 现代C++ (C++11/14/17/20)
+- 系统编程
+- 性能优化
+- 内存管理
+- STL和算法
+- 游戏开发
+
+你只处理C++相关的开发任务，提供高质量、高效的C++代码。`;
+    }
+
+    async process(task, originalPrompt, strategy, signal) {
+        console.log('⚡ C++专家AI开始编程');
+        const systemPrompt = this.getSystemPrompt();
+        const codePrompt = `${systemPrompt}
+
+用户原始需求: "${originalPrompt}"
+具体任务: "${task.description}"
+实现策略: ${JSON.stringify(strategy, null, 2)}
+
+要求：
+1. 生成完整可编译的C++代码
+2. 采用现代C++最佳实践
+3. 包含详细的注释和说明
+4. 注意内存管理和性能优化
+5. 提供编译和使用说明
+
+请生成高质量的C++代码：`;
+
+        const result = await getAIPrompt(codePrompt, [], signal);
+        return {
+            taskId: task.id,
+            type: 'cpp',
+            content: result.success ? result.data : 'C++代码生成失败',
+            success: result.success
+        };
+    }
+}
+
+// 数据分析专家AI
+class DataAnalystAI {
+    getSystemPrompt() {
+        return `你是专业的数据分析师，精通数据处理和可视化技术。
+
+专业领域：
+- Python数据分析 (pandas, numpy)
+- 数据可视化 (matplotlib, seaborn, plotly)
+- 统计分析
+- 数据清洗和预处理
+- Excel数据处理
+- 报告生成
+
+你专注于数据分析任务，提供实用的数据处理和分析解决方案。`;
+    }
+
+    async process(task, originalPrompt, strategy, signal) {
+        console.log('📊 数据分析专家AI开始分析');
+        const systemPrompt = this.getSystemPrompt();
+        const codePrompt = `${systemPrompt}
+
+用户原始需求: "${originalPrompt}"
+具体任务: "${task.description}"
+实现策略: ${JSON.stringify(strategy, null, 2)}
+
+要求：
+1. 提供完整的数据分析解决方案
+2. 使用适当的Python库和工具
+3. 包含数据可视化和统计分析
+4. 提供详细的分析步骤和解释
+5. 确保代码可复现和可扩展
+
+请生成专业的数据分析代码和方案：`;
+
+        const result = await getAIPrompt(codePrompt, [], signal);
+        return {
+            taskId: task.id,
+            type: 'data_analysis',
+            content: result.success ? result.data : '数据分析方案生成失败',
+            success: result.success
+        };
+    }
+}
+
+// 机器学习专家AI
+class MachineLearningAI {
+    getSystemPrompt() {
+        return `你是机器学习专家，精通各种ML/DL算法和框架。
+
+专业领域：
+- 机器学习算法实现
+- 深度学习模型 (TensorFlow, PyTorch)
+- 数据预处理和特征工程
+- 模型训练和优化
+- 模型评估和部署
+- scikit-learn应用
+
+你专注于机器学习任务，提供完整的ML解决方案。`;
+    }
+
+    async process(task, originalPrompt, strategy, signal) {
+        console.log('🤖 机器学习专家AI开始建模');
+        const systemPrompt = this.getSystemPrompt();
+        const codePrompt = `${systemPrompt}
+
+用户原始需求: "${originalPrompt}"
+具体任务: "${task.description}"
+实现策略: ${JSON.stringify(strategy, null, 2)}
+
+要求：
+1. 提供完整的机器学习解决方案
+2. 包含数据预处理和特征工程
+3. 实现模型训练和评估流程
+4. 提供详细的算法解释和参数说明
+5. 确保代码的可复现性
+
+请生成专业的机器学习代码和方案：`;
+
+        const result = await getAIPrompt(codePrompt, [], signal);
+        return {
+            taskId: task.id,
+            type: 'machine_learning',
+            content: result.success ? result.data : '机器学习方案生成失败',
+            success: result.success
+        };
+    }
+}
+
+// 一般问答专家AI
+class GeneralAssistantAI {
+    getSystemPrompt() {
+        return `你是专业的知识助手，能够回答各种一般性问题。
+
+专业能力：
+- 知识问答
+- 概念解释
+- 学习指导
+- 问题分析
+- 建议提供
+
+你专注于提供准确、有用的信息和建议。`;
+    }
+
+    async process(task, originalPrompt, strategy, signal) {
+        console.log('💬 一般问答专家AI开始回答');
+        const systemPrompt = this.getSystemPrompt();
+        const answerPrompt = `${systemPrompt}
+
+用户问题: "${originalPrompt}"
+任务描述: "${task.description}"
+
+要求：
+1. 提供准确、详细的回答
+2. 结构化组织信息
+3. 提供实用的建议和指导
+4. 确保内容的可理解性
+5. 包含相关的补充信息
+
+请提供专业、有用的回答：`;
+
+        const result = await getAIPrompt(answerPrompt, [], signal);
+        return {
+            taskId: task.id,
+            type: 'general',
+            content: result.success ? result.data : '问答生成失败',
+            success: result.success
+        };
+    }
+}
+
 /**
  * AI协调器 - 负责任务分配和结果整合
  */
@@ -812,9 +1168,16 @@ class AICoordinator {
         this.aiWorkers = {
             planner: new PlannerAI(),
             strategist: new StrategistAI(),
-            coder: new CodeGeneratorAI(),
-            reviewer: new ReviewerAI(),
+            pythonDev: new PythonDeveloperAI(),
+            jsDev: new JavaScriptDeveloperAI(),
+            webDev: new WebDeveloperAI(),
+            javaDev: new JavaDeveloperAI(),
+            cppDev: new CppDeveloperAI(),
+            dataAnalyst: new DataAnalystAI(),
+            mlExpert: new MachineLearningAI(),
             writer: new WriterAI(),
+            generalAssistant: new GeneralAssistantAI(),
+            reviewer: new ReviewerAI(),
             integrator: new IntegratorAI(),
             visualAnalyzer: new VisualAnalyzerAI()
         };
@@ -1061,96 +1424,50 @@ class AICoordinator {
         console.log(`🔍 任务分配: 任务ID=${task.id}, 任务类型=${task.type}`);
         
         switch (task.type) {
-            case 'code':
-                worker = this.aiWorkers.coder;
-                console.log('✅ 分配给代码生成AI');
+            case 'python':
+                worker = this.aiWorkers.pythonDev;
+                console.log('✅ 分配给Python开发专家');
+                break;
+            case 'javascript':
+                worker = this.aiWorkers.jsDev;
+                console.log('✅ 分配给JavaScript开发专家');
+                break;
+            case 'web':
+                worker = this.aiWorkers.webDev;
+                console.log('✅ 分配给Web前端专家');
+                break;
+            case 'java':
+                worker = this.aiWorkers.javaDev;
+                console.log('✅ 分配给Java开发专家');
+                break;
+            case 'cpp':
+                worker = this.aiWorkers.cppDev;
+                console.log('✅ 分配给C++开发专家');
+                break;
+            case 'data_analysis':
+                worker = this.aiWorkers.dataAnalyst;
+                console.log('✅ 分配给数据分析专家');
+                break;
+            case 'machine_learning':
+                worker = this.aiWorkers.mlExpert;
+                console.log('✅ 分配给机器学习专家');
                 break;
             case 'writing':
                 worker = this.aiWorkers.writer;
-                console.log('✅ 分配给文字创作AI');
+                console.log('✅ 分配给文字创作专家');
+                break;
+            case 'general':
+                worker = this.aiWorkers.generalAssistant;
+                console.log('✅ 分配给一般问答专家');
                 break;
             default:
-                // 动态生成专用AI来处理特殊任务类型
-                console.log(`🤖 创建动态AI专家处理任务类型: ${task.type}`);
-                worker = await this.createDynamicWorker(task.type, task, originalPrompt, strategy);
+                // 对于未知类型，使用一般问答专家
+                console.log(`⚠️ 未知任务类型: ${task.type}，使用一般问答专家`);
+                worker = this.aiWorkers.generalAssistant;
                 break;
         }
 
         return await worker.process(task, originalPrompt, strategy, signal);
-    }
-
-    /**
-     * 动态创建专门的AI工作者
-     */
-    async createDynamicWorker(taskType, task, originalPrompt, strategy) {
-        return {
-            async process(task, originalPrompt, strategy, signal) {
-                console.log(`🎯 动态AI专家开始处理 ${taskType} 类型任务`);
-                
-                // 根据任务类型和描述智能判断应该用哪种AI
-                const taskDesc = task.description?.toLowerCase() || '';
-                const isActuallyCode = /代码|html|css|javascript|网页|网站|页面|程序|应用|界面|布局/.test(taskDesc) ||
-                                     /个人主页|主页|homepage|website/.test(originalPrompt.toLowerCase());
-                
-                if (isActuallyCode) {
-                    console.log('🔄 动态判断: 实际是代码任务，转发给代码AI');
-                    // 临时修改任务类型并转发给代码AI
-                    const modifiedTask = { ...task, type: 'code' };
-                    
-                    const systemPrompt = `你是资深的前端开发工程师，专精于现代Web技术。你只处理代码开发任务，绝不参与文字创作工作。`;
-                    const codePrompt = `${systemPrompt}
-
-用户原始需求: "${originalPrompt}"
-具体任务: "${task.description}"
-实现策略: ${JSON.stringify(strategy, null, 2)}
-
-要求：
-1. 生成完整的HTML、CSS和JavaScript代码
-2. 采用现代前端开发最佳实践
-3. 确保代码的可读性和可维护性
-4. 包含必要的注释和说明
-5. 实现响应式设计，支持移动端
-
-请生成高质量的前端代码：`;
-
-                    const result = await getAIPrompt(codePrompt, [], signal);
-                    return {
-                        taskId: task.id,
-                        type: 'code',
-                        content: result.success ? result.data : '代码生成失败',
-                        success: result.success
-                    };
-                } else {
-                    console.log('🔄 动态判断: 实际是写作任务，转发给写作AI');
-                    // 临时修改任务类型并转发给写作AI
-                    const modifiedTask = { ...task, type: 'writing' };
-                    
-                    const systemPrompt = `你是专业的文字创作专家，擅长各种体裁的内容创作。你专注于文字内容创作，绝不生成任何代码。`;
-                    const writePrompt = `${systemPrompt}
-
-用户原始需求: "${originalPrompt}"
-具体任务: "${task.description}"
-创作策略: ${JSON.stringify(strategy, null, 2)}
-
-要求：
-1. 内容必须原创且具有吸引力
-2. 语言表达要流畅自然
-3. 结构要清晰合理
-4. 适合目标读者群体
-5. 体现情感共鸣和深度思考
-
-请基于以上需求创作高质量的内容：`;
-
-                    const result = await getAIPrompt(writePrompt, [], signal);
-                    return {
-                        taskId: task.id,
-                        type: 'writing',
-                        content: result.success ? result.data : '内容创作失败',
-                        success: result.success
-                    };
-                }
-            }
-        };
     }
 }
 

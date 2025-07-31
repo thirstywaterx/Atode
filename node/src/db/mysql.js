@@ -1,11 +1,11 @@
 const mysql = require('mysql2'); // 改为 mysql2
 
 const connection = mysql.createConnection({
-    host: 'localhost',
-    user: 'root',
-    password: '@Aa2257436167',
+    host: 'YOUR_HOST', // 替换为你的数据库主机
+    user: 'YOUR_USERNAME', // 替换为你的数据库用户名
+    password: 'YOUR_PASSWORD', // 替换为你的数据库密码
     port: 3306, // 改为数字
-    database: 'cloudode',
+    database: 'atode',
 });
 
 connection.connect((err) => {
