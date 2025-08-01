@@ -1,8 +1,9 @@
 <h1 align='center'>Atode</h1>
 
 <div align='center'>
+  <img src="https://img.shields.io/badge/Version-v1.0-blue.svg" alt="Version">
   <img src="https://img.shields.io/badge/Nodejs-v22.17.1-lightgreen.svg" alt="NodeJS">
-  <img src="https://img.shields.io/badge/MySQL-8.3-blue.svg" alt="MySQL">
+  <img src="https://img.shields.io/badge/MySQL-v8.3-blue.svg" alt="MySQL">
 </div>
 
 <p align='center'>一个多AI团队协作系统</p>
