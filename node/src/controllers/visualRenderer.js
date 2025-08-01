@@ -1,7 +1,9 @@
-const puppeteer = require('puppeteer');
-const fs = require('fs').promises;
+// 占位文件，防止 require 报错
+module.exports = {};
 const path = require('path');
 const { getAIPrompt } = require('./aihandel.js');
+const fs = require('fs');
+const puppeteer = require('puppeteer');
 
 class VisualRenderer {
     constructor() {
@@ -14,7 +16,8 @@ class VisualRenderer {
 
     async ensureTempDir() {
         try {
-            await fs.mkdir(this.tempDir, { recursive: true });
+            // 修复: fs.mkdir 不带回调，直接 await
+            await fs.promises.mkdir(this.tempDir, { recursive: true });
         } catch (error) {
             console.error('创建临时目录失败:', error);
         }
@@ -433,15 +436,33 @@ class VisualRenderer {
 }
 
 // 单例
-const visualRenderer = new VisualRenderer();
+let visualRenderer;
+try {
+    visualRenderer = new VisualRenderer();
+} catch (error) {
+    console.error('❌ 视觉渲染器初始化失败:', error.message);
+    visualRenderer = {
+        isAvailable: false,
+        async comprehensiveAnalysis() {
+            return {
+                success: false,
+                error: '视觉渲染器不可用'
+            };
+        }
+    };
+}
 
 // 进程退出时清理
 process.on('exit', () => {
-    visualRenderer.cleanup();
+    if (visualRenderer && visualRenderer.cleanup) {
+        visualRenderer.cleanup();
+    }
 });
 
 process.on('SIGINT', () => {
-    visualRenderer.cleanup();
+    if (visualRenderer && visualRenderer.cleanup) {
+        visualRenderer.cleanup();
+    }
     process.exit();
 });
 

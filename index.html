@@ -4,18 +4,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloudode - 实时AI助手</title>
-    <!-- 引入 marked.js 和 highlight.js -->
-    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/highlight.min.js"></script>
-    <!-- highlightjs-copy 插件 -->
-    <script src="https://cdn.jsdelivr.net/npm/highlightjs-copy/dist/highlightjs-copy.min.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlightjs-copy/dist/highlightjs-copy.min.css">
-    <!-- 使用 highlight.js 暗黑主题 atom-one-dark -->
-    <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.9.0/build/styles/atom-one-dark.min.css">
-
+    <title>Atode - 实时AI助手</title>
+    <script src="https://unpkg.com/@highlightjs/cdn-assets@11.9.0/highlight.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/highlight.js@11.9.0/styles/atom-one-dark.min.css">
+    <script src="./node_modules/marked/lib/marked.umd.js"></script>
+    <script src="./node_modules/dompurify/dist/purify.min.js"></script>
+    <script src="https://unpkg.com/highlightjs-copy/dist/highlightjs-copy.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/highlightjs-copy/dist/highlightjs-copy.min.css" />
     <style>
         /* 基础重置和布局 */
         body {
@@ -27,9 +22,9 @@
         s-scroll-view {
             position: absolute;
             top: 0;
-            height: 100vh;
+            height: calc(100vh - 200px);
             width: 100%;
-            margin-bottom: 400px;
+            padding-bottom: 200px;
         }
 
         s-page {
@@ -49,6 +44,7 @@
             position: relative;
             top: 50px;
             min-width: 90%;
+            max-width: 800px;
             min-height: calc(100vh - 200px);
             left: 50%;
             transform: translateX(-50%);
@@ -103,10 +99,6 @@
             transform: scale(0.8);
         }
 
-        #user .menu-button svg {
-            transform: scale(0.8);
-        }
-
         #user-avatar {
             position: relative;
             float: right;
@@ -133,6 +125,7 @@
             padding: 16px;
             overflow-x: auto;
             margin: 16px 0;
+            position: relative;
         }
 
         .markdown-content pre code {
@@ -172,87 +165,6 @@
             color: #222 !important;
         }
 
-        #user {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            width: 180px;
-            height: 55px;
-        }
-
-        #user .menu-button {
-            position: relative;
-            float: right;
-            width: 40px;
-            height: 40px;
-            top: 50%;
-            transform: translateY(-50%);
-            border-radius: 100%;
-            margin-right: -4px;
-        }
-
-        #user .menu-button svg {
-            transform: scale(0.8);
-        }
-
-        #user .menu-button svg {
-            transform: scale(0.8);
-        }
-
-        #user-avatar {
-            position: relative;
-            float: right;
-            top: 50%;
-            right: 5px;
-            transform: translateY(-50%);
-            border-radius: 100%;
-            margin-left: 18px;
-        }
-
-        #new-chat {
-            fill: var(--color-icon);
-        }
-
-        /* 基础Markdown样式 */
-        .markdown-content {
-            line-height: 1.6;
-            margin: 1em 0;
-        }
-
-        .markdown-content pre {
-            background: #f6f8fa;
-            border-radius: 6px;
-            padding: 16px;
-            overflow-x: auto;
-            margin: 16px 0;
-        }
-
-        .markdown-content pre code {
-            background: none;
-            padding: 0;
-            border-radius: 0;
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-        }
-
-        .markdown-content code {
-            background: #f6f8fa;
-            padding: 2px 4px;
-            border-radius: 3px;
-            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
-            font-size: 0.9em;
-        }
-
-        /* 暗黑模式下的代码样式 */
-        s-page[dark] .markdown-content pre {
-            background: #2d3748;
-            color: #e2e8f0;
-        }
-
-        s-page[dark] .markdown-content code {
-            background: #2d3748;
-            color: #e2e8f0;
-        }
-
         /* 暗黑模式设置区域一行居中 */
         .setting-container {
             display: flex;
@@ -262,24 +174,78 @@
             margin-top: 5px;
         }
 
-        /* highlightjs-copy 按钮显示优化 */
+        /* highlightjs-copy 按钮样式优化 */
         .hljs-copy-button {
-            float: right !important;
+            position: absolute !important;
             top: 8px !important;
             right: 8px !important;
-            opacity: 1 !important;
+            opacity: 0.7 !important;
+            background: rgba(0, 0, 0, 0.1) !important;
             color: var(--color-icon) !important;
-            border: none !important;
+            border: 1px solid rgba(0, 0, 0, 0.2) !important;
             border-radius: 4px !important;
             padding: 4px 8px !important;
             font-size: 12px !important;
             cursor: pointer !important;
             z-index: 10 !important;
+            transition: opacity 0.2s !important;
+            pointer-events: auto !important;
+            will-change: auto !important;
+            transform: translateZ(0) !important;
         }
 
-        /* 确保代码块容器有相对定位 */
-        .hljs-copy-wrapper {
+        .hljs-copy-button:hover {
+            opacity: 1 !important;
+            background: rgba(0, 0, 0, 0.2) !important;
+        }
+
+        /* 确保代码块容器有相对定位，完全移除滚动条 */
+        .markdown-content pre {
             position: relative !important;
+            overflow: hidden !important;
+            white-space: pre !important;
+            word-wrap: break-word !important;
+        }
+
+        /* 修复代码块内容样式，防止抽搐 */
+        .markdown-content pre code {
+            display: block !important;
+            overflow: visible !important;
+            white-space: pre-wrap !important;
+            word-wrap: break-word !important;
+            word-break: normal !important;
+            max-width: 100% !important;
+        }
+
+        /* 只有在内容确实超出时才显示水平滚动条 */
+        .markdown-content pre.code-overflow {
+            overflow-x: auto !important;
+            overflow-y: hidden !important;
+        }
+
+        /* 防止复制按钮在流式传输时抽动 */
+        .hljs-copy-button {
+            position: absolute !important;
+            top: 8px !important;
+            right: 8px !important;
+            opacity: 0.7 !important;
+            background: rgba(0, 0, 0, 0.1) !important;
+            color: var(--color-icon) !important;
+            border: 1px solid rgba(0, 0, 0, 0.2) !important;
+            border-radius: 4px !important;
+            padding: 4px 8px !important;
+            font-size: 12px !important;
+            cursor: pointer !important;
+            z-index: 10 !important;
+            transition: opacity 0.2s !important;
+            pointer-events: auto !important;
+            will-change: auto !important;
+            transform: translateZ(0) !important;
+        }
+
+        .hljs-copy-button:hover {
+            opacity: 1 !important;
+            background: rgba(0, 0, 0, 0.2) !important;
         }
 
         :not(:defined) {
@@ -316,7 +282,6 @@
             justify-content: center;
             padding: 0 24px;
         }
-    </style>
     </style>
 </head>
 
@@ -442,6 +407,7 @@
     <!-- 如有 <script src="./node_modules/sober/dist/sober.min.js"></script> 等路径引用 cloudode，改为 atode -->
     <script src="./node_modules/sober/dist/sober.min.js"></script>
     <script>
+        // 用户登录相关代码保持不变
         const signinButton = document.getElementById('signin-button');
         const dialog = document.querySelector('s-dialog');
         const userAvatar = document.getElementById('user-avatar');
@@ -451,6 +417,13 @@
         const darkModeSwitch = document.querySelector('s-switch');
         const page = document.querySelector('s-page');
         let currentUser = null;
+
+        // 初始化主题
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            page.theme = savedTheme;
+            darkModeSwitch.checked = savedTheme === 'dark';
+        }
 
         function showSnackbar(message) {
             const snackbar = document.querySelector('s-snackbar');
@@ -464,8 +437,10 @@
         darkModeSwitch.addEventListener('click', function () {
             if (darkModeSwitch.checked) {
                 page.theme = 'dark';
+                localStorage.setItem('theme', 'dark');
             } else {
                 page.theme = 'light';
+                localStorage.setItem('theme', 'light');
             }
         });
 
@@ -673,98 +648,214 @@
             langPrefix: 'hljs language-',
             breaks: true,
             gfm: true,
-            sanitize: false // 让DOMPurify处理清理
+            sanitize: false
         });
 
-        // 初始化WebSocket连接
-        function initWebSocket() {
-            const wsUrl = `ws://${window.location.host}`;
-            console.log('🔌 连接WebSocket:', wsUrl);
+        /**
+         * 使用 marked.js 解析 Markdown 并应用代码高亮和复制功能
+         */
+        function parseMarkdown(markdown) {
+            if (!markdown || typeof markdown !== 'string') {
+                return markdown;
+            }
 
-            ws = new WebSocket(wsUrl);
+            try {
+                // 1. 使用 marked.js 解析 Markdown
+                let html = marked.parse(markdown);
 
-            ws.onopen = function (event) {
-                console.log('✅ WebSocket连接成功');
-                isConnected = true;
-            };
+                // 2. 使用 DOMPurify 清理HTML
+                html = DOMPurify.sanitize(html, {
+                    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'code', 'pre', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'blockquote', 'a', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'div', 'span', 'button'],
+                    ALLOWED_ATTR: ['class', 'href', 'src', 'alt', 'title', 'target', 'rel', 'onclick', 'data-clipboard-text']
+                });
 
-            ws.onmessage = function (event) {
-                console.log('🔔 原始WebSocket消息:', event.data);
-                try {
-                    const message = JSON.parse(event.data);
-                    handleWebSocketMessage(message);
-                } catch (error) {
-                    console.error('❌ 消息解析失败:', error, '原始数据:', event.data);
-                }
-            };
-
-            ws.onclose = function (event) {
-                console.log('❌ WebSocket连接关闭', event.code, event.reason);
-                isConnected = false;
-                isProcessing = false;
-
-                // 5秒后尝试重连
-                setTimeout(initWebSocket, 5000);
-            };
-
-            ws.onerror = function (error) {
-                console.error('WebSocket错误:', error);
-            };
-        }
-
-        // 初始化 highlightjs-copy 插件
-        function initHighlightCopy() {
-            if (window.hljs && window.CopyButtonPlugin) {
-                hljs.addPlugin(new CopyButtonPlugin({
-                    lang: 'zh-CN',
-                    callback: function (text, el) {
-                        console.log('✅ 代码已复制到剪贴板');
-                        showSnackbar('代码已复制到剪贴板');
-                    }
-                }));
-                console.log('✅ highlightjs-copy 插件已初始化');
-            } else {
-                console.warn('⚠️ highlightjs-copy 插件未找到，3秒后重试');
-                setTimeout(initHighlightCopy, 3000);
+                return html;
+            } catch (error) {
+                console.error('Markdown 解析错误:', error);
+                return markdown;
             }
         }
 
-        // 为代码块添加复制功能
+        /**
+         * 为新添加的内容应用代码高亮和复制功能（优化版本）
+         */
         function addCopyToCodeBlocks(container) {
             if (!container) return;
 
+            console.log('🔍 为容器添加代码高亮和复制功能');
+
+            // 查找所有代码块
             const codeBlocks = container.querySelectorAll('pre code');
-            codeBlocks.forEach(block => {
-                // 重新高亮
-                hljs.highlightElement(block);
+            console.log(`📦 找到 ${codeBlocks.length} 个代码块`);
 
-                // 确保父元素有相对定位
-                const pre = block.parentElement;
-                if (pre && pre.tagName === 'PRE') {
-                    pre.classList.add('hljs-copy-wrapper');
+            codeBlocks.forEach((block, index) => {
+                console.log(`🔨 处理第 ${index + 1} 个代码块`);
+                
+                // 确保应用了 highlight.js（只对新的代码块）
+                if (typeof hljs !== 'undefined' && !block.classList.contains('hljs')) {
+                    try {
+                        hljs.highlightElement(block);
+                        console.log(`✅ 第 ${index + 1} 个代码块高亮成功`);
+                    } catch (e) {
+                        console.warn(`⚠️ 第 ${index + 1} 个代码块高亮失败:`, e);
+                    }
+                }
 
-                    // 检查是否已经有复制按钮
-                    if (!pre.querySelector('.hljs-copy-button')) {
-                        // 手动创建复制按钮
-                        const copyButton = document.createElement('button');
-                        copyButton.className = 'hljs-copy-button';
-                        copyButton.textContent = '复制';
-                        copyButton.onclick = function () {
-                            navigator.clipboard.writeText(block.textContent).then(() => {
-                                showSnackbar('代码已复制到剪贴板');
-                                copyButton.textContent = '已复制';
+                // 确保 pre 元素有正确的类和样式
+                const preElement = block.parentElement;
+                if (preElement && preElement.tagName === 'PRE') {
+                    // 设置样式，智能判断是否需要滚动条
+                    preElement.style.position = 'relative';
+                    
+                    // 检查内容是否需要水平滚动
+                    const needsHorizontalScroll = block.scrollWidth > preElement.clientWidth;
+                    if (needsHorizontalScroll) {
+                        preElement.classList.add('code-overflow');
+                    } else {
+                        preElement.style.overflow = 'hidden';
+                    }
+                    
+                    // 如果还没有复制按钮，添加一个（防重复）
+                    if (!preElement.querySelector('.hljs-copy-button')) {
+                        const copyBtn = document.createElement('button');
+                        copyBtn.className = 'hljs-copy-button';
+                        copyBtn.innerHTML = '复制';
+                        copyBtn.type = 'button';
+                        
+                        // 标记已处理，防止重复添加
+                        copyBtn.setAttribute('data-processed', 'true');
+                        
+                        // 防止事件冒泡和默认行为
+                        copyBtn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            
+                            const text = block.textContent || block.innerText;
+                            navigator.clipboard.writeText(text).then(() => {
+                                showSnackbar('已复制到剪贴板');
+                                console.log('📋 手动复制成功');
+                                
+                                // 临时显示复制成功状态
+                                const originalText = copyBtn.innerHTML;
+                                copyBtn.innerHTML = '已复制';
+                                copyBtn.style.background = 'rgba(0, 128, 0, 0.2)';
+                                
                                 setTimeout(() => {
-                                    copyButton.textContent = '复制';
-                                }, 2000);
+                                    copyBtn.innerHTML = originalText;
+                                    copyBtn.style.background = '';
+                                }, 1000);
                             }).catch(err => {
-                                console.error('复制失败:', err);
+                                console.error('❌ 复制失败:', err);
                                 showSnackbar('复制失败');
                             });
-                        };
-                        pre.appendChild(copyButton);
+                        });
+                        
+                        preElement.appendChild(copyBtn);
+                        console.log(`✅ 第 ${index + 1} 个代码块添加复制按钮成功`);
                     }
                 }
             });
+
+            console.log('✅ 代码块处理完成');
+        }
+
+        /**
+         * 针对流式传输优化的代码块处理函数
+         */
+        function updateCodeBlocksForStreaming(container) {
+            if (!container) return;
+
+            // 只查找新的、未处理的代码块
+            const newCodeBlocks = container.querySelectorAll('pre code:not([data-streaming-processed])');
+            
+            newCodeBlocks.forEach((block, index) => {
+                // 标记为已处理，避免重复处理
+                block.setAttribute('data-streaming-processed', 'true');
+                
+                // 确保应用了 highlight.js
+                if (typeof hljs !== 'undefined' && !block.classList.contains('hljs')) {
+                    try {
+                        hljs.highlightElement(block);
+                    } catch (e) {
+                        console.warn(`⚠️ 流式代码块高亮失败:`, e);
+                    }
+                }
+
+                const preElement = block.parentElement;
+                if (preElement && preElement.tagName === 'PRE') {
+                    preElement.style.position = 'relative';
+                    preElement.style.overflow = 'hidden';
+                    
+                    // 只在没有复制按钮时添加
+                    if (!preElement.querySelector('.hljs-copy-button')) {
+                        const copyBtn = document.createElement('button');
+                        copyBtn.className = 'hljs-copy-button';
+                        copyBtn.innerHTML = '复制';
+                        copyBtn.type = 'button';
+                        copyBtn.setAttribute('data-processed', 'true');
+                        
+                        copyBtn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            
+                            const text = block.textContent || block.innerText;
+                            navigator.clipboard.writeText(text).then(() => {
+                                showSnackbar('已复制到剪贴板');
+                                
+                                const originalText = copyBtn.innerHTML;
+                                copyBtn.innerHTML = '已复制';
+                                copyBtn.style.background = 'rgba(0, 128, 0, 0.2)';
+                                
+                                setTimeout(() => {
+                                    copyBtn.innerHTML = originalText;
+                                    copyBtn.style.background = '';
+                                }, 1000);
+                            }).catch(err => {
+                                console.error('❌ 复制失败:', err);
+                                showSnackbar('复制失败');
+                            });
+                        });
+                        
+                        preElement.appendChild(copyBtn);
+                    }
+                }
+            });
+
+            console.log('✅ 代码块处理完成');
+        }
+
+        // 初始化 highlight.js 和复制功能
+        function initializeHighlightJS() {
+            // 确保 highlight.js 已加载
+            if (typeof hljs !== 'undefined') {
+                console.log('✅ Highlight.js 已加载');
+                
+                // 配置 highlight.js
+                hljs.configure({
+                    languages: ['javascript', 'python', 'java', 'cpp', 'html', 'css', 'json', 'xml', 'bash', 'sql'],
+                    ignoreUnescapedHTML: true
+                });
+
+                // 初始化复制插件（如果可用）
+                if (typeof CopyButtonPlugin !== 'undefined') {
+                    console.log('✅ CopyButtonPlugin 已加载');
+                    try {
+                        hljs.addPlugin(new CopyButtonPlugin({
+                            lang: "zh-CN",
+                            callback: (text, el) => {
+                                console.log('📋 插件复制成功:', text.substring(0, 50) + '...');
+                                showSnackbar("已复制到剪贴板");
+                            },
+                        }));
+                    } catch (e) {
+                        console.warn('⚠️ CopyButtonPlugin 初始化失败:', e);
+                    }
+                } else {
+                    console.warn('⚠️ CopyButtonPlugin 未加载，使用手动复制方案');
+                }
+            } else {
+                console.warn('⚠️ Highlight.js 未加载');
+            }
         }
 
         // 初始化WebSocket连接
@@ -806,7 +897,6 @@
         // 处理WebSocket消息
         function handleWebSocketMessage(message) {
             console.log('📨 收到消息类型:', message.type);
-            console.log('📊 完整消息内容:', message);
 
             switch (message.type) {
                 case 'processing_start':
@@ -816,19 +906,21 @@
                     currentMessageId = `msg-${Date.now()}`;
                     const startDiv = `<div id="${currentMessageId}"><p><strong>AI：</strong>正在处理...</p></div>`;
                     output.innerHTML += startDiv;
-                    console.log('✅ 已添加处理容器:', currentMessageId);
                     // 滚动到底部
-                    setTimeout(() => { output.scrollTop = output.scrollHeight; }, 0);
+                    requestAnimationFrame(() => {
+                        output.scrollTop = output.scrollHeight;
+                    });
                     break;
 
                 case 'coordination_progress':
-                    console.log('🔄 协调进度:', message.message, message.progress + '%');
+                    console.log('🔄 协调进度:', message.message);
                     const progressContainer = document.getElementById(currentMessageId);
                     if (progressContainer) {
                         progressContainer.innerHTML = `<p><strong>AI：</strong>🚀 ${message.stage}/6 ${message.message}</p>`;
-                        console.log('✅ 已更新进度显示');
-                    } else {
-                        console.warn('⚠️ 找不到进度容器:', currentMessageId);
+                        // 保持滚动位置在底部
+                        requestAnimationFrame(() => {
+                            output.scrollTop = output.scrollHeight;
+                        });
                     }
                     break;
 
@@ -837,23 +929,21 @@
                     const startContainer = document.getElementById(currentMessageId);
                     if (startContainer) {
                         startContainer.innerHTML = `<p><strong>AI：</strong></p><div class="markdown-content">开始接收内容...</div>`;
-                        console.log('✅ 已准备内容容器');
-                    } else {
-                        console.warn('⚠️ 找不到开始容器:', currentMessageId);
+                        // 保持滚动位置在底部
+                        requestAnimationFrame(() => {
+                            output.scrollTop = output.scrollHeight;
+                        });
                     }
                     break;
 
                 case 'stream_chunk':
                     console.log('📦 收到数据块，内容长度:', message.fullContent ? message.fullContent.length : 0);
-                    console.log('📋 数据块内容预览:', message.fullContent ? message.fullContent.substring(0, 100) + '...' : '无内容');
 
                     const container = document.getElementById(currentMessageId);
                     if (container) {
-                        console.log('✅ 找到容器:', currentMessageId);
                         if (message.fullContent) {
                             let contentDiv = container.querySelector('.markdown-content');
                             if (!contentDiv) {
-                                console.log('⚠️ 创建新的内容容器');
                                 contentDiv = document.createElement('div');
                                 contentDiv.className = 'markdown-content';
                                 container.innerHTML = '<p><strong>AI：</strong></p>';
@@ -862,28 +952,30 @@
 
                             try {
                                 contentDiv.innerHTML = parseMarkdown(message.fullContent);
-                                // 为新内容添加复制功能
-                                addCopyToCodeBlocks(contentDiv);
-                                console.log('✅ 已更新页面内容，当前长度:', contentDiv.innerHTML.length);
+                                // 使用流式优化的处理函数，避免重复处理
+                                updateCodeBlocksForStreaming(contentDiv);
+                                
+                                // 只有在用户没有主动滚动时才自动滚动到底部
+                                const isUserScrolledUp = output.scrollTop < (output.scrollHeight - output.clientHeight - 100);
+                                if (!isUserScrolledUp) {
+                                    requestAnimationFrame(() => {
+                                        output.scrollTop = output.scrollHeight;
+                                    });
+                                }
                             } catch (parseError) {
                                 console.error('❌ Markdown解析失败:', parseError);
                                 contentDiv.textContent = message.fullContent;
                             }
-                        } else {
-                            console.warn('⚠️ 数据块没有fullContent');
                         }
-                    } else {
-                        console.error('❌ 找不到容器:', currentMessageId, '当前所有容器:', document.querySelectorAll('[id^="msg-"]'));
                     }
                     break;
 
                 case 'stream_complete':
-                    console.log('✅ 流式传输完成，最终内容长度:', message.fullContent ? message.fullContent.length : 0);
+                    console.log('✅ 流式传输完成');
                     if (currentMessageId) {
                         const container = document.getElementById(currentMessageId);
                         if (container) {
                             const finalContent = message.fullContent || message.content || '';
-                            console.log('📝 最终内容预览:', finalContent.substring(0, 200) + '...');
 
                             let contentDiv = container.querySelector('.markdown-content');
                             if (!contentDiv) {
@@ -896,20 +988,24 @@
                             if (finalContent) {
                                 try {
                                     contentDiv.innerHTML = parseMarkdown(finalContent);
-                                    // 为最终内容添加复制功能
+                                    // 最终处理，检查所有代码块的滚动需求
                                     addCopyToCodeBlocks(contentDiv);
                                     conversationHistory.push({ role: 'assistant', content: finalContent });
-                                    console.log('✅ 已保存到历史记录，当前历史长度:', conversationHistory.length);
                                 } catch (parseError) {
                                     console.error('❌ 最终内容解析失败:', parseError);
                                     contentDiv.textContent = finalContent;
                                 }
                             } else {
-                                console.warn('⚠️ 没有最终内容');
                                 contentDiv.innerHTML = '<p><em>未收到内容</em></p>';
                             }
-                        } else {
-                            console.error('❌ 完成时找不到容器:', currentMessageId);
+                            
+                            // 完成后确保滚动到底部，但使用平滑滚动
+                            requestAnimationFrame(() => {
+                                output.scrollTo({
+                                    top: output.scrollHeight,
+                                    behavior: 'smooth'
+                                });
+                            });
                         }
                     }
                     isProcessing = false;
@@ -921,36 +1017,19 @@
                     isProcessing = false;
                     setProcessingState(false);
                     output.innerHTML += `<p><strong>错误:</strong> ${message.message}</p>`;
-                    // 滚动到底部
-                    setTimeout(() => { output.scrollTop = output.scrollHeight; }, 0);
+                    // 错误信息也需要滚动到底部
+                    requestAnimationFrame(() => {
+                        output.scrollTop = output.scrollHeight;
+                    });
                     break;
 
                 default:
                     console.log('❓ 未知消息类型:', message.type, message);
             }
 
-            output.scrollTop = output.scrollHeight;
+            // 移除这里的统一滚动调用，让每个case自己控制
+            // output.scrollTop = output.scrollHeight;
         }
-
-        // 监听按钮点击事件
-        submitButton.addEventListener('click', async (event) => {
-            event.preventDefault();
-
-            if (isProcessing) {
-                await stopProcessing();
-            } else {
-                await sendPromptWebSocket();
-            }
-        });
-
-        // 监听表单提交事件
-        promptInput.addEventListener('submit', async (event) => {
-            event.preventDefault();
-
-            if (!isProcessing) {
-                await sendPromptWebSocket();
-            }
-        });
 
         // 通过WebSocket发送消息
         async function sendPromptWebSocket() {
@@ -1027,8 +1106,14 @@
             ws.send(JSON.stringify(message));
 
             promptInput.value = '';
-            // 滚动到底部
-            setTimeout(() => { output.scrollTop = output.scrollHeight; }, 0);
+            
+            // 发送消息后让输入框失去焦点，不重新聚焦
+            promptInput.blur();
+            
+            // 发送消息后滚动到底部
+            requestAnimationFrame(() => {
+                output.scrollTop = output.scrollHeight;
+            });
         }
 
         // 停止处理
@@ -1059,38 +1144,6 @@
             }
         }
 
-        /**
-         * 使用 marked.js 解析 Markdown
-         */
-        function parseMarkdown(markdown) {
-            if (!markdown || typeof markdown !== 'string') {
-                return markdown;
-            }
-
-            try {
-                // 1. 使用 marked.js 解析 Markdown，自动应用highlight.js
-                let html = marked.parse(markdown);
-
-                // 2. 使用 DOMPurify 清理HTML，防止XSS攻击
-                html = DOMPurify.sanitize(html, {
-                    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'code', 'pre', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'blockquote', 'a', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'div', 'span', 'button'],
-                    ALLOWED_ATTR: ['class', 'href', 'src', 'alt', 'title', 'target', 'rel', 'onclick']
-                });
-
-                // 3. 创建临时容器来处理代码高亮和复制功能
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = html;
-
-                // 4. 为代码块添加复制功能
-                addCopyToCodeBlocks(tempDiv);
-
-                return tempDiv.innerHTML;
-            } catch (error) {
-                console.error('Markdown 解析错误:', error);
-                return markdown;
-            }
-        }
-
         // 心跳检测
         function startHeartbeat() {
             setInterval(() => {
@@ -1102,10 +1155,15 @@
 
         // 页面加载时初始化WebSocket和代码复制功能
         window.addEventListener('load', () => {
+            // 延迟一点确保所有外部脚本都已加载
+            setTimeout(initializeHighlightJS, 100);
             initWebSocket();
             startHeartbeat();
-            // 延迟初始化复制功能，确保所有依赖库都已加载
-            setTimeout(initHighlightCopy, 1000);
+            
+            // 移除页面加载后的自动聚焦
+            // setTimeout(() => {
+            //     promptInput.focus();
+            // }, 200);
         });
 
         // 页面卸载时关闭连接
@@ -1140,6 +1198,11 @@
             if (isProcessing) {
                 await stopProcessing();
             }
+
+            // 移除新建对话后的自动聚焦
+            // setTimeout(() => {
+            //     promptInput.focus();
+            // }, 50);
 
             console.log('✅ 已开始新对话');
         }
@@ -1262,7 +1325,9 @@
                         output.appendChild(messageDiv);
 
                         // 为新添加的代码块添加复制功能
-                        addCopyToCodeBlocks(messageDiv);
+                        setTimeout(() => {
+                            addCopyToCodeBlocks(messageDiv);
+                        }, 100);
                     }
                 });
 
@@ -1270,8 +1335,13 @@
                 const popup = document.querySelector('s-popup.menu-button');
                 popup.removeAttribute('opened');
 
-                // 滚动到底部
-                setTimeout(() => { output.scrollTop = output.scrollHeight; }, 0);
+                // 加载历史记录后滚动到底部
+                setTimeout(() => { 
+                    output.scrollTo({
+                        top: output.scrollHeight,
+                        behavior: 'smooth'
+                    });
+                }, 300);
             } catch (error) {
                 console.error('加载历史内容失败:', error);
                 showSnackbar('加载历史内容失败: ' + error.message);
@@ -1341,60 +1411,59 @@
             }
         }
 
-        // 在流式传输完成时保存历史记录
-        // 修改 handleWebSocketMessage 函数中的 stream_complete 部分
+        // 修改 handleWebSocketMessage 函数来包含保存历史记录的功能
         const originalHandleWebSocketMessage = handleWebSocketMessage;
-        handleWebSocketMessage = function (message) {
+        
+        // 重新定义 handleWebSocketMessage 函数
+        function handleWebSocketMessageWithHistory(message) {
+            // 调用原始的处理函数
             originalHandleWebSocketMessage(message);
 
             // 在流式传输完成后保存历史记录
             if (message.type === 'stream_complete') {
                 saveChatHistory();
             }
-        };
+        }
+
+        // 替换消息处理函数
+        handleWebSocketMessage = handleWebSocketMessageWithHistory;
 
         // highlightjs-copy 初始化
         document.addEventListener('DOMContentLoaded', function () {
-            if (window.hljs && window.hljsCopy) {
-                hljs.addPlugin(new window.hljsCopy());
-            }
             // 给所有代码块加 hljs-copy 类
             document.querySelectorAll('pre code').forEach(function (block) {
-                block.parentElement.classList.add('hljs-copy');
+                if (block.parentElement) {
+                    block.parentElement.classList.add('hljs-copy');
+                }
             });
         });
-
-        // 让 parseMarkdown 生成的代码块自动加 hljs-copy 类
-        function parseMarkdown(markdown) {
-            if (!markdown || typeof markdown !== 'string') {
-                return markdown;
-            }
-            try {
-                let html = marked.parse(markdown);
-                html = DOMPurify.sanitize(html, {
-                    ALLOWED_TAGS: ['p', 'br', 'strong', 'em', 'u', 'code', 'pre', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'li', 'blockquote', 'a', 'img', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'div', 'span'],
-                    ALLOWED_ATTR: ['class', 'href', 'src', 'alt', 'title', 'target', 'rel']
-                });
-                const tempDiv = document.createElement('div');
-                tempDiv.innerHTML = html;
-                tempDiv.querySelectorAll('pre').forEach(pre => {
-                    pre.classList.add('hljs-copy');
-                });
-                tempDiv.querySelectorAll('pre code').forEach((block) => {
-                    hljs.highlightElement(block);
-                });
-                return tempDiv.innerHTML;
-            } catch (error) {
-                console.error('Markdown 解析错误:', error);
-                return markdown;
-            }
-        }
 
         // 支持按下 Enter 发送，Shift+Enter 换行
         promptInput.addEventListener('keydown', function (event) {
             if (event.key === 'Enter' && !event.shiftKey) {
                 event.preventDefault();
-                submitButton.click();
+                // 直接调用发送函数，而不是点击按钮
+                sendPromptWebSocket();
+            }
+        });
+
+        // 监听按钮点击事件
+        submitButton.addEventListener('click', async (event) => {
+            event.preventDefault();
+
+            if (isProcessing) {
+                await stopProcessing();
+            } else {
+                await sendPromptWebSocket();
+            }
+        });
+
+        // 监听表单提交事件
+        promptInput.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            if (!isProcessing) {
+                await sendPromptWebSocket();
             }
         });
     </script>

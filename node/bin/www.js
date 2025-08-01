@@ -1,8 +1,9 @@
 const http = require('http');
+const path = require('path');
 const WebSocketServer = require('../src/websocket/websocketServer.js');
 const { AICoordinator } = require('../src/controllers/aiCoordinator.js');
 
-const PORT = 5001;
+const PORT = process.env.PORT || 5001;
 
 // 添加全局错误处理
 process.on('uncaughtException', (error) => {
@@ -14,6 +15,7 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 try {
+    // 修正app路径引用 - 从 ../../app 改为 ../app
     const serverHandler = require('../app');
     const server = http.createServer(serverHandler);
 
@@ -24,7 +26,9 @@ try {
     console.log('✅ WebSocket服务器已附加');
 
     server.listen(PORT, () => {
-        console.log(`Server is running on port ${PORT}`);
+        console.log(`🚀 Server is running on port ${PORT}`);
+        console.log(`📁 Working directory: ${process.cwd()}`);
+        console.log(`📦 Node modules from: ${path.resolve('node_modules')}`);
     });
 
     server.on('error', (err) => {
@@ -32,4 +36,5 @@ try {
     });
 } catch (error) {
     console.error('启动失败:', error);
+    process.exit(1);
 }

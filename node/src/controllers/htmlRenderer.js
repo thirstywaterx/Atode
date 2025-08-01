@@ -1,7 +1,5 @@
 const fs = require('fs').promises;
 const path = require('path');
-const { lightRenderer } = require('./lightRenderer.js');
-const { visualRenderer } = require('./visualRenderer.js');
 
 class HTMLRenderer {
     constructor() {
@@ -14,6 +12,7 @@ class HTMLRenderer {
 
     async ensureTempDir() {
         try {
+            // 修复: fs.mkdir 不带回调，直接 await
             await fs.mkdir(this.tempDir, { recursive: true });
         } catch (error) {
             console.error('创建临时目录失败:', error);
@@ -181,24 +180,35 @@ class HTMLRenderer {
 
             // 2. 轻量级视觉分析
             console.log('🎨 开始轻量级视觉分析...');
-            const lightAnalysis = await lightRenderer.renderHTMLAnalysis(htmlContent);
-            if (lightAnalysis.success) {
-                result.lightweightRender = lightAnalysis;
+            try {
+                const { lightRenderer } = require('./lightRenderer.js');
+                const lightAnalysis = await lightRenderer.renderHTMLAnalysis(htmlContent);
+                if (lightAnalysis.success) {
+                    result.lightweightRender = lightAnalysis;
+                }
+            } catch (lightError) {
+                console.warn('⚠️ 轻量级渲染器不可用:', lightError.message);
             }
 
             // 3. 真正的视觉分析（如果可用）
-            if (visualRenderer.isAvailable) {
-                console.log('🖼️ 开始AI视觉分析...');
-                const visualAnalysis = await visualRenderer.comprehensiveAnalysis(htmlContent, options);
-                if (visualAnalysis.success) {
-                    result.visualRender = visualAnalysis;
-                    result.method = 'full-visual';
-                    console.log(`✅ AI视觉分析完成，整体评分: ${visualAnalysis.visualAnalysis.overallScore}/10`);
+            try {
+                const { visualRenderer } = require('./visualRenderer.js');
+                if (visualRenderer && visualRenderer.isAvailable) {
+                    console.log('🖼️ 开始AI视觉分析...');
+                    const visualAnalysis = await visualRenderer.comprehensiveAnalysis(htmlContent, options);
+                    if (visualAnalysis.success) {
+                        result.visualRender = visualAnalysis;
+                        result.method = 'full-visual';
+                        console.log(`✅ AI视觉分析完成，整体评分: ${visualAnalysis.visualAnalysis.overallScore}/10`);
+                    } else {
+                        console.log('⚠️ AI视觉分析失败，使用轻量级分析');
+                    }
                 } else {
-                    console.log('⚠️ AI视觉分析失败，使用轻量级分析');
+                    console.log('⚠️ 视觉渲染器不可用，使用轻量级分析');
+                    result.method = 'lightweight-only';
                 }
-            } else {
-                console.log('⚠️ 视觉渲染器不可用，使用轻量级分析');
+            } catch (visualError) {
+                console.warn('⚠️ 视觉渲染器初始化失败:', visualError.message);
                 result.method = 'lightweight-only';
             }
 

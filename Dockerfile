@@ -1,26 +1,58 @@
-FROM node:22.17.1
+FROM node:22-slim
 
 WORKDIR /app
 
-# 安装 MySQL
-RUN apt-get update && \
-    DEBIAN_FRONTEND=noninteractive apt-get install -y mysql-server && \
-    rm -rf /var/lib/apt/lists/*
+COPY package.json package-lock.json ./
+
+RUN npm install
 
 # 复制项目文件
 COPY . .
 
-# 安装依赖
-RUN npm install
+# 使用阿里云源
+RUN echo "deb https://mirrors.aliyun.com/debian/ bookworm main contrib non-free non-free-firmware\n\
+deb https://mirrors.aliyun.com/debian/ bookworm-updates main contrib non-free non-free-firmware\n\
+deb https://mirrors.aliyun.com/debian-security bookworm-security main contrib non-free non-free-firmware" > /etc/apt/sources.list \
+    && apt-get update \
+    && apt-get install -y \
+        libnspr4 \
+        libnss3 \
+        libatk-bridge2.0-0 \
+        libatk1.0-0 \
+        libgtk-3-0 \
+        libx11-xcb1 \
+        libxcomposite1 \
+        libxdamage1 \
+        libxrandr2 \
+        libgbm1 \
+        libasound2 \
+        libpangocairo-1.0-0 \
+        libpango-1.0-0 \
+        libcups2 \
+        libdrm2 \
+        libxfixes3 \
+        libxext6 \
+        libxi6 \
+        libxtst6 \
+        libnss3 \
+        libnss3-tools \
+        fonts-liberation \
+        libappindicator3-1 \
+        libatspi2.0-0 \
+        libwayland-client0 \
+        libwayland-cursor0 \
+        libwayland-egl1 \
+        libxkbcommon0 \
+        libxss1 \
+        lsb-release \
+        xdg-utils \
+        wget \
+        ca-certificates \
+        --no-install-recommends \
+    || apt-get install -y --fix-missing \
+    && ldconfig
 
-# 初始化 MySQL，创建 atode 用户和数据库
-RUN service mysql start && \
-    sleep 5 && \
-    mysql -u root -e "CREATE USER IF NOT EXISTS 'atode'@'%' IDENTIFIED BY 'atode';" && \
-    mysql -u root -e "CREATE DATABASE IF NOT EXISTS atode;" && \
-    mysql -u root -e "GRANT ALL PRIVILEGES ON atode.* TO 'atode'@'%'; FLUSH PRIVILEGES;"
+EXPOSE 5001
 
-EXPOSE 5001 3306
-
-# 启动脚本：先启动MySQL，再启动Node
-CMD service mysql start && npm start
+# 启动脚本
+CMD ["npm", "run", "dev"]

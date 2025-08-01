@@ -1,5 +1,5 @@
 {
-  "name": "cloudode",
+  "name": "atode",
   "version": "1.0.0",
   "description": "",
   "main": "node/bin/www.js",
@@ -17,7 +17,14 @@
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "cookie-parser": "^1.4.6",
+    "dompurify": "^3.2.6",
     "dotenv": "^17.2.1",
-    "sober": "^1.1.8"
+    "express": "^5.1.0",
+    "marked": "^16.1.1",
+    "mysql2": "^3.14.3",
+    "puppeteer": "^24.15.0",
+    "sober": "^1.1.8",
+    "ws": "^8.18.1"
   }
 }

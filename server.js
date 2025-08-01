@@ -1,18 +1,9 @@
 const express = require('express');
-const sqlite3 = require('sqlite3').verbose();
 const crypto = require('crypto');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
+const { execSQLWithPromise } = require('./node/src/db/mysql.js');
 const app = express();
-const db = new sqlite3.Database('./users.db');
-
-// 自动建表
-db.run(`CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT UNIQUE,
-    password TEXT,
-    token TEXT
-)`);
 
 app.use(bodyParser.json());
 app.use(cookieParser());
@@ -27,39 +18,51 @@ function genToken() {
 }
 
 // 注册
-app.post('/api/register', (req, res) => {
+app.post('/api/register', async (req, res) => {
     const { username, password } = req.body;
     if (!username || !password) return res.json({ success: false, message: '用户名和密码不能为空' });
-    db.get('SELECT * FROM users WHERE username=?', [username], (err, row) => {
-        if (row) return res.json({ success: false, message: '用户名已存在' });
-        db.run('INSERT INTO users (username, password) VALUES (?, ?)', [username, hash(password)], err => {
-            if (err) return res.json({ success: false, message: '注册失败' });
-            res.json({ success: true });
-        });
-    });
+    try {
+        const users = await execSQLWithPromise('SELECT * FROM users WHERE username=?', [username]);
+        if (users.length > 0) return res.json({ success: false, message: '用户名已存在' });
+        await execSQLWithPromise('INSERT INTO users (username, password) VALUES (?, ?)', [username, hash(password)]);
+        res.json({ success: true });
+    } catch (err) {
+        res.json({ success: false, message: '注册失败' });
+    }
 });
 
 // 登录
-app.post('/api/login', (req, res) => {
+app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
-    db.get('SELECT * FROM users WHERE username=?', [username], (err, row) => {
-        if (!row || row.password !== hash(password)) return res.json({ success: false, message: '用户名或密码错误' });
+    try {
+        const users = await execSQLWithPromise('SELECT * FROM users WHERE username=?', [username]);
+        if (users.length === 0 || users[0].password !== hash(password)) {
+            return res.json({ success: false, message: '用户名或密码错误' });
+        }
         const token = genToken();
-        db.run('UPDATE users SET token=? WHERE username=?', [token, username]);
+        await execSQLWithPromise('UPDATE users SET token=? WHERE username=?', [token, username]);
         res.json({ success: true, token });
-    });
+    } catch (err) {
+        res.json({ success: false, message: '登录失败' });
+    }
 });
 
 // 校验
-app.get('/api/check', (req, res) => {
+app.get('/api/check', async (req, res) => {
     const token = req.headers.authorization || req.cookies.token;
     if (!token) return res.json({ success: false });
-    db.get('SELECT * FROM users WHERE token=?', [token], (err, row) => {
-        if (row) res.json({ success: true, username: row.username });
-        else res.json({ success: false });
-    });
+    try {
+        const users = await execSQLWithPromise('SELECT * FROM users WHERE token=?', [token]);
+        if (users.length > 0) {
+            res.json({ success: true, username: users[0].username });
+        } else {
+            res.json({ success: false });
+        }
+    } catch (err) {
+        res.json({ success: false });
+    }
 });
 
-app.listen(3000, () => {
-    console.log('Server running at http://localhost:3000');
+app.listen(5001, () => {
+    console.log('Server running at http://localhost:5001');
 });

@@ -1,10 +1,24 @@
 const { getAIPrompt } = require('./aihandel.js');
-const { AICoordinator } = require('./aiCoordinator.js');
 
 class TaskManager {
     constructor() {
         this.tasks = new Map(); // 存储任务状态
-        this.coordinator = new AICoordinator();
+        // 延迟初始化协调器，避免循环依赖
+        this.coordinator = null;
+        this.initCoordinator();
+    }
+
+    /**
+     * 延迟初始化协调器
+     */
+    initCoordinator() {
+        try {
+            const { AICoordinator } = require('./aiCoordinator.js');
+            this.coordinator = new AICoordinator();
+        } catch (error) {
+            console.warn('⚠️ AI协调器初始化失败，将使用基础AI处理:', error.message);
+            this.coordinator = null;
+        }
     }
 
     /**
@@ -70,7 +84,7 @@ class TaskManager {
             }
             
             let result;
-            if (useCoordinator) {
+            if (useCoordinator && this.coordinator) {
                 this.updateTaskProgress(taskId, 15, '启动多AI协调系统...');
                 await new Promise(resolve => setTimeout(resolve, 1000));
                 

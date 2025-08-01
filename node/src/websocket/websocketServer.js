@@ -7,7 +7,22 @@ class WebSocketServer {
         this.wss = new WebSocket.Server({ server });
         this.clients = new Map();
         this.coordinator = null;
+        this.initCoordinator();
         this.init();
+    }
+
+    /**
+     * 初始化协调器
+     */
+    initCoordinator() {
+        try {
+            const { AICoordinator } = require('../controllers/aiCoordinator.js');
+            this.coordinator = new AICoordinator();
+            console.log('✅ WebSocket协调器初始化成功');
+        } catch (error) {
+            console.error('❌ WebSocket协调器初始化失败:', error.message);
+            this.coordinator = null;
+        }
     }
 
     init() {

@@ -1,5 +1,4 @@
 const { getAIPrompt } = require('../controllers/aihandel.js');
-const { AICoordinator } = require('../controllers/aiCoordinator.js');
 const { taskManager } = require('../controllers/taskManager.js');
 const { htmlRenderer } = require('../controllers/htmlRenderer.js');
 const sessionManager = require('../controllers/sessionManager.js');
@@ -7,9 +6,11 @@ const chatHistoryController = require('../controllers/chatHistoryController.js')
 
 let coordinator;
 try {
+    const { AICoordinator } = require('../controllers/aiCoordinator.js');
     coordinator = new AICoordinator();
+    console.log('✅ AI协调器初始化成功');
 } catch (error) {
-    console.error('协调器初始化失败:', error);
+    console.error('❌ 协调器初始化失败:', error.message);
     coordinator = null;
 }
 
