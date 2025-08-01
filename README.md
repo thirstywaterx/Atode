@@ -43,6 +43,14 @@ DB_PASSWORD=your_db_psw
 DB_NAME=your_db_name                                
 ```
 
+然后使用 Docker 拉取项目
+
+```
+docker pull thirstywater/atode:latest
+```
+
+启动项目
+
 ```
 docker run \
   -p 5002:5001 \
